@@ -26,10 +26,10 @@ author:
   name             : Jiayou(Rick) Liang
   pronouns         : # example: "she/her"  
   bio              : "Short biography for the left-hand sidebar"
-  location         : IL, US
-  employer         : "Red Brick University"
+  location         : "IL, US"
+  university         : "The Chicago University"
   uri              : # URL
-  email            : "none@example.org" 
+  email            : "rickliang616@gmail.com" 
 
   # Academic websites
   arxiv            : # URL - Update with the correct link to your profile

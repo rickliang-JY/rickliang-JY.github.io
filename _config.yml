@@ -23,10 +23,10 @@ repository               : rickliang-JY/rickliang-JY.github.io
 author:
   # Biographic information
   avatar           : "profile.png"
-  name             : "Jiayou(Rick) Liang"
+  name             : Jiayou(Rick) Liang
   pronouns         : # example: "she/her"  
   bio              : "Short biography for the left-hand sidebar"
-  location         : "Earth"
+  location         : IL, US
   employer         : "Red Brick University"
   uri              : # URL
   email            : "none@example.org" 

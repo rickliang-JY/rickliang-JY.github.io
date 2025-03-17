@@ -1,11 +1,11 @@
 ---
-title: "Is there salary discrimination by race and nationality in the NBA? A new approach"
+title: "Real Option Approach and Multi-Stage Fuzzy Decision-Making System for IP Valuation"
 collection: publications
 category: conferences
 permalink: /publication/real_option_approach
 # excerpt: 'This paper is about fixing template issue #693.'
 date: 2023-07-07
-venue: 'The  2nd International Conference on Financial Innovation, FinTech and Information Technology (FFIT 2023)'
+venue: 'The 2nd International Conference on Financial Innovation, FinTech and Information Technology (FFIT 2023)'
 paperurl: 'http://rickliang-jy.github.io/files/real_option_approach.pdf'
 # citation: 'Your Name, You. (2024). &quot;Paper Title Number 3.&quot; <i>GitHub Journal of Bugs</i>. 1(3).'
 ---

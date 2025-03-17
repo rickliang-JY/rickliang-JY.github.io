@@ -1,6 +1,6 @@
 ---
 title: "Recommendation System for Sephora Products and Skincare Reviews"
-excerpt: "Short description of portfolio item number 1<br/><img src='/images/recommendation_example.png'>"
+excerpt: "A sample application of recommendation system for Sephora products<br/><img src='/images/recommendation_example.png'>"
 collection: portfolio
 ---
 

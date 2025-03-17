@@ -9,7 +9,7 @@
 # Basic Site Settings
 locale                   : "en-US"
 site_theme               : "default"
-title                    : "Jiayou(Rick) Liang / Personal Website"
+title                    : "Jiayou(Rick) Liang"
 title_separator          : "-"
 name                     : &name "Jiayou(Rick) Liang"
 description              : &description "personal description"

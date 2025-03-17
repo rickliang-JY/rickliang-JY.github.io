@@ -14,7 +14,7 @@ Education
 <!-- * Ph.D in Version Control Theory, GitHub University, 2018 (expected) -->
 * M.S. in Applied Data Science, University of Chicago, 2025(expected)
 * B.S. in Financial Mathematics, Beijing-Normal-Hong Kong Baptist University(BNBU), 2024
-
+* Summer Course Artificial Intelligence and Machine Learning, University of Oxford, 2022
 Work experience
 ======
 * Summer 2023: Assistant for Marketing and Sales Analysis

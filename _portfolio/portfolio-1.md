@@ -1,7 +1,7 @@
 ---
-title: "Portfolio item number 1"
-excerpt: "Short description of portfolio item number 1<br/><img src='/images/500x300.png'>"
+title: "Recommendation System for Sephora Products and Skincare Reviews"
+excerpt: "Short description of portfolio item number 1<br/><img src='/images/recommendation_example.png'>"
 collection: portfolio
 ---
 
-This is an item in your portfolio. It can be have images or nice text. If you name the file .md, it will be parsed as markdown. If you name the file .html, it will be parsed as HTML. 
+This is a sample application of recommendation system for Sephora's products, you can find the code in [Github](https://github.com/rickliang-JY/Recommend-System-for-Sephora-Products-and-Skincare-Reviews)

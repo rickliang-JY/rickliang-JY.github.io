@@ -17,29 +17,29 @@ Education
 
 Work experience
 ======
-* Spring 2024: Academic Pages Collaborator
-  * GitHub University
-  * Duties includes: Updates and improvements to template
-  * Supervisor: The Users
+* Summer 2023: Assistant for Marketing and Sales Analysis
+  * Exion Asia (HuiZhou) Co.,Ltd
+  * Duties includes: analyze large datasets, derive key insights and patterns
+  <!-- * Supervisor: The Users -->
 
-* Fall 2015: Research Assistant
-  * GitHub University
-  * Duties included: Merging pull requests
-  * Supervisor: Professor Hub
+* Summer 2022: Customer Service Manager  
+  * Bank of Communications Huizhou Branch
+  * Duties included: Guided customers in their banking services
+  <!-- * Supervisor: Professor Hub -->
 
-* Summer 2015: Research Assistant
+<!-- * Summer 2015: Research Assistant
   * GitHub University
   * Duties included: Tagging issues
-  * Supervisor: Professor Git
+  * Supervisor: Professor Git -->
   
 Skills
 ======
-* Skill 1
-* Skill 2
-  * Sub-skill 2.1
-  * Sub-skill 2.2
-  * Sub-skill 2.3
-* Skill 3
+* Python, R, Matlab, C++
+* Machine Learning
+  * NLP
+  * Recommendation System
+  <!-- * Sub-skill 2.3 -->
+* Financial Modeling
 
 Publications
 ======
@@ -47,7 +47,7 @@ Publications
     {% include archive-single-cv.html %}
   {% endfor %}</ul>
   
-Talks
+<!-- Talks
 ======
   <ul>{% for post in site.talks reversed %}
     {% include archive-single-talk-cv.html  %}
@@ -57,8 +57,8 @@ Teaching
 ======
   <ul>{% for post in site.teaching reversed %}
     {% include archive-single-cv.html %}
-  {% endfor %}</ul>
+  {% endfor %}</ul> -->
   
-Service and leadership
+<!-- Service and leadership
 ======
-* Currently signed in to 43 different slack teams
+* Currently signed in to 43 different slack teams -->

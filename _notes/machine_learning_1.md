@@ -12,4 +12,9 @@ The Summary of MSADS Machine Learning I
 
 # Machine Learning I
 
-## 
+## Unsupervised Learning: Models find patterns from unlabeled data
+
+
+## Supervised Learning: Models find relationship between input and output
+
+

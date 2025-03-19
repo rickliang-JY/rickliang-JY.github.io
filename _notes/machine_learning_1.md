@@ -13,8 +13,16 @@ The Summary of MSADS Machine Learning I
 # Machine Learning I
 
 ## Unsupervised Learning: Models find patterns from unlabeled data
-[link](https://marimo-team.github.io/marimo-gh-pages-template/notebooks/penguins.html)
 
+<iframe
+  src="https://marimo.app/l/k98mpv"
+  width="100%"
+  height="500"
+  frameborder="0"
+></iframe>
+
+
+****
 ## Supervised Learning: Models find relationship between input and output
 
 

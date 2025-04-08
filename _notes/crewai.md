@@ -8,7 +8,7 @@ date: 2025-03-15
 location: "Chicago, Illinois"
 ---
 
-The Summary of Crewai course
+The Summary of Crewai course: Multi AI Agent Systems with crewAI 
 
 
 

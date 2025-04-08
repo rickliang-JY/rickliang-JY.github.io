@@ -1,0 +1,1026 @@
+
+---
+title: "Crewai Note"
+
+collection: notes
+---
+
+
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Crewai Note</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="crewai-note">Crewai Note</h1>
+<h2 id="multi-ai-agent-systems-with-crewai">Multi AI Agent Systems with crewAI</h2>
+<h3 id="overview">Overview</h3>
+<h4 id="agentic-automation">Agentic Automation</h4>
+<p><img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743794499764.png" alt="1743794499764"></p>
+<h3 id="what-are-agent">What are agent?</h3>
+<p>The agent is boen when you get this LLM to engage in an inner thinking process throughout it asks questions and anwer the same questions itself to the point that it can move on and get better by itself</p>
+<p>Task -&gt; agent(Tools) -&gt; Answer</p>
+<p>Multi Agent:</p>
+<p>So whenever you task an agent with something, this agent can also task another agent with another task. In the end you get one single final answer</p>
+<p><img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743795193491.png" alt="1743795193491"></p>
+<h3 id="foundations-of-multi-agent-systems-and-crewai-create-agents-to-research-and-write-an-article">Foundations of Multi-Agent systems and CrewAI: Create agents to research and write an article</h3>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai <span class="hljs-keyword">import</span> Agent,Task, Crew
+</code></pre>
+<h4 id="agent-planner-writer-editor">Agent: Planner, Writer, Editor</h4>
+<p><strong>Note</strong>: The benefit of using <em>multiple strings</em> :</p>
+<pre><code class="language-Python">varname = <span class="hljs-string">&quot;line 1 of text&quot;</span>
+          <span class="hljs-string">&quot;line 2 of text&quot;</span>
+</code></pre>
+<p>versus the <em>triple quote docstring</em>:</p>
+<pre><code class="language-Python">varname = <span class="hljs-string">&quot;&quot;&quot;line 1 of text
+             line 2 of text
+          &quot;&quot;&quot;</span>
+</code></pre>
+<p>is that it can avoid adding those whitespaces and newline characters, making it better formatted to be passed to the LLM.</p>
+<pre><code class="language-python">planner = Agent(
+    role=<span class="hljs-string">&quot;Content Planner&quot;</span>,
+    goal=<span class="hljs-string">&quot;Plan engaging and factually accurate content on {topic}&quot;</span>,
+    backstory=<span class="hljs-string">&quot;You&#x27;re working on planning a blog article &quot;</span>
+              <span class="hljs-string">&quot;about the topic: {topic}.&quot;</span>
+              <span class="hljs-string">&quot;You collect information that helps the &quot;</span>
+              <span class="hljs-string">&quot;audience learn something &quot;</span>
+              <span class="hljs-string">&quot;and make informed decisions. &quot;</span>
+              <span class="hljs-string">&quot;Your work is the basis for &quot;</span>
+              <span class="hljs-string">&quot;the Content Writer to write an article on this topic.&quot;</span>,
+    allow_delegation=<span class="hljs-literal">False</span>,
+	verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<pre><code class="language-python">writer = Agent(
+    role=<span class="hljs-string">&quot;Content Writer&quot;</span>,
+    goal=<span class="hljs-string">&quot;Write insightful and factually accurate &quot;</span>
+         <span class="hljs-string">&quot;opinion piece about the topic: {topic}&quot;</span>,
+    backstory=<span class="hljs-string">&quot;You&#x27;re working on a writing &quot;</span>
+              <span class="hljs-string">&quot;a new opinion piece about the topic: {topic}. &quot;</span>
+              <span class="hljs-string">&quot;You base your writing on the work of &quot;</span>
+              <span class="hljs-string">&quot;the Content Planner, who provides an outline &quot;</span>
+              <span class="hljs-string">&quot;and relevant context about the topic. &quot;</span>
+              <span class="hljs-string">&quot;You follow the main objectives and &quot;</span>
+              <span class="hljs-string">&quot;direction of the outline, &quot;</span>
+              <span class="hljs-string">&quot;as provide by the Content Planner. &quot;</span>
+              <span class="hljs-string">&quot;You also provide objective and impartial insights &quot;</span>
+              <span class="hljs-string">&quot;and back them up with information &quot;</span>
+              <span class="hljs-string">&quot;provide by the Content Planner. &quot;</span>
+              <span class="hljs-string">&quot;You acknowledge in your opinion piece &quot;</span>
+              <span class="hljs-string">&quot;when your statements are opinions &quot;</span>
+              <span class="hljs-string">&quot;as opposed to objective statements.&quot;</span>,
+    allow_delegation=<span class="hljs-literal">False</span>,
+    verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<pre><code class="language-python">editor = Agent(
+    role=<span class="hljs-string">&quot;Editor&quot;</span>,
+    goal=<span class="hljs-string">&quot;Edit a given blog post to align with &quot;</span>
+         <span class="hljs-string">&quot;the writing style of the organization. &quot;</span>,
+    backstory=<span class="hljs-string">&quot;You are an editor who receives a blog post &quot;</span>
+              <span class="hljs-string">&quot;from the Content Writer. &quot;</span>
+              <span class="hljs-string">&quot;Your goal is to review the blog post &quot;</span>
+              <span class="hljs-string">&quot;to ensure that it follows journalistic best practices,&quot;</span>
+              <span class="hljs-string">&quot;provides balanced viewpoints &quot;</span>
+              <span class="hljs-string">&quot;when providing opinions or assertions, &quot;</span>
+              <span class="hljs-string">&quot;and also avoids major controversial topics &quot;</span>
+              <span class="hljs-string">&quot;or opinions when possible.&quot;</span>,
+    allow_delegation=<span class="hljs-literal">False</span>,
+    verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<h4 id="tasks--plan-write-edit">Tasks:  Plan, Write, Edit</h4>
+<blockquote>
+<p>Define your Tasks, and provide them a <code>description</code>, <code>expected_output</code> and <code>agent</code>.</p>
+</blockquote>
+<p><code>description</code>: what do you expect the agent to do?
+<code>expected_output</code>: Acts as a forcing function to force you to think exactly what you want to get out of the task, what you want this agent to produce as a final outcome.
+<code>agent</code>: assign the agent to the task</p>
+<pre><code class="language-python">plan = Task(
+    description=(
+        <span class="hljs-string">&quot;1. Prioritize the latest trends, key players, &quot;</span>
+            <span class="hljs-string">&quot;and noteworthy news on {topic}.\n&quot;</span>
+        <span class="hljs-string">&quot;2. Identify the target audience, considering &quot;</span>
+            <span class="hljs-string">&quot;their interests and pain points.\n&quot;</span>
+        <span class="hljs-string">&quot;3. Develop a detailed content outline including &quot;</span>
+            <span class="hljs-string">&quot;an introduction, key points, and a call to action.\n&quot;</span>
+        <span class="hljs-string">&quot;4. Include SEO keywords and relevant data or sources.&quot;</span>
+    ),
+    expected_output=<span class="hljs-string">&quot;A comprehensive content plan document &quot;</span>
+        <span class="hljs-string">&quot;with an outline, audience analysis, &quot;</span>
+        <span class="hljs-string">&quot;SEO keywords, and resources.&quot;</span>,
+    agent=planner,
+)
+</code></pre>
+<pre><code class="language-python">write = Task(
+    description=(
+        <span class="hljs-string">&quot;1. Use the content plan to craft a compelling &quot;</span>
+            <span class="hljs-string">&quot;blog post on {topic}.\n&quot;</span>
+        <span class="hljs-string">&quot;2. Incorporate SEO keywords naturally.\n&quot;</span>
+		<span class="hljs-string">&quot;3. Sections/Subtitles are properly named &quot;</span>
+            <span class="hljs-string">&quot;in an engaging manner.\n&quot;</span>
+        <span class="hljs-string">&quot;4. Ensure the post is structured with an &quot;</span>
+            <span class="hljs-string">&quot;engaging introduction, insightful body, &quot;</span>
+            <span class="hljs-string">&quot;and a summarizing conclusion.\n&quot;</span>
+        <span class="hljs-string">&quot;5. Proofread for grammatical errors and &quot;</span>
+            <span class="hljs-string">&quot;alignment with the brand&#x27;s voice.\n&quot;</span>
+    ),
+    expected_output=<span class="hljs-string">&quot;A well-written blog post &quot;</span>
+        <span class="hljs-string">&quot;in markdown format, ready for publication, &quot;</span>
+        <span class="hljs-string">&quot;each section should have 2 or 3 paragraphs.&quot;</span>,
+    agent=writer,
+)
+</code></pre>
+<pre><code class="language-python">edit = Task(
+    description=(<span class="hljs-string">&quot;Proofread the given blog post for &quot;</span>
+                 <span class="hljs-string">&quot;grammatical errors and &quot;</span>
+                 <span class="hljs-string">&quot;alignment with the brand&#x27;s voice.&quot;</span>),
+    expected_output=<span class="hljs-string">&quot;A well-written blog post in markdown format, &quot;</span>
+                    <span class="hljs-string">&quot;ready for publication, &quot;</span>
+                    <span class="hljs-string">&quot;each section should have 2 or 3 paragraphs.&quot;</span>,
+    agent=editor
+)
+</code></pre>
+<h4 id="creating-the-crew-combine-you-agents-and-tasks">Creating the Crew: combine you agents and tasks</h4>
+<ul>
+<li>Create your crew of Agents</li>
+<li>Pass the tasks to be performed by those agents.
+<ul>
+<li><strong>Note</strong>: <em>For this simple example</em>, the tasks will be performed sequentially (i.e they are dependent on each other), so the <em>order</em> of the task in the list <em>matters</em>.</li>
+</ul>
+</li>
+<li><code>verbose=2</code> allows you to see all the logs of the execution.</li>
+</ul>
+<pre><code class="language-python">crew = Crew(
+    agents=[planner, writer, editor],
+    tasks=[plan, write, edit],
+    verbose=<span class="hljs-number">2</span>
+)
+</code></pre>
+<p><code>verbose</code>(equal 1 or 2) allows us to see how this crew is exrcuting and look at some of its logs</p>
+<p>The task is operated i order, it's important given that the output of one task is going to be sent as part of the inpiut for the next?</p>
+<h4 id="how-to-run-the-crew">how to run the crew</h4>
+<pre><code class="language-python">result = crew.kickoff(inputs={<span class="hljs-string">&quot;topic&quot;</span>: <span class="hljs-string">&quot;Artificial Intelligence&quot;</span>})
+
+</code></pre>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> IPython.display <span class="hljs-keyword">import</span> Markdown
+Markdown(result)
+</code></pre>
+<h3 id="key-elements-of-ai-agents">Key Elements of AI agents</h3>
+<h4 id="role-playing">Role Playing</h4>
+<p>Role playing can make a huge difference on the responses that you're going to get from agent.
+The ability for them to kind of like just take the shape or form or function for something else will have a direct impact on what kind of answers you're going to get and kind of lik what are you going for.</p>
+<p>Example:
+Ask: Give me an analysis on the tesla stock</p>
+<p>Ask: You are a FINRA approved financial analyst. give me an analysis on tesla stock</p>
+<p>When building agent makesure you are setting the ==appropriate roles, the appropriate goals, and the appropriate backstories==, because that will paly a role in the kind of results that you are going to get.</p>
+<h4 id="focus">Focus</h4>
+<p>Too much tools, too much information, or too much context, you models can lose imprtant information amd also open uo opportunities for more hallucination.</p>
+<p>Use different agents let them seperate the work
+Choose the tools that you are going to give your agents. You want to make sure that you are providing them with the key tools to do the job they need.</p>
+<h4 id="cooperation">Cooperation</h4>
+<p>The ability for these agents, they are now role playing to talk to each other and simulate that same chat behavior creates a better result.
+They can basically <strong>take feedback</strong> from each other, they can <strong>delegate tasks</strong> to each other, and by doing that, produce a better outcome</p>
+<h4 id="guardrails">Guardrails</h4>
+<p>AI applications imply fuzzy inputs, fuzzy transformations and fuzzy outputs. That means that you do not necessarily will get stong typed results.</p>
+<p>Throught many iterations, crewai implemented a series of guardrails that prevents your agent from derailing and nudgr your agents to stay on track, and most of those are implemented on the framework level.</p>
+<p>These guardrails are going yo make sure to prevent hallucinations and to also make sure that you get a reliable and consistnet result throughout your multi-agent systems.</p>
+<h4 id="memory">Memory</h4>
+<p>Memory is the ability for your agent to remember what it has done, and not only that, but to use that to inform new decisions and new executions.
+The ability to recollect what they did in the past, learn from it, and apply that knowledge into future execution.
+In the crewai:</p>
+<ol>
+<li><strong>Long-term memory</strong>
+<ul>
+<li>Memory during execution of a task</li>
+<li>Share knowledge,activites, and learnings with other agents</li>
+<li>Share intermediate information even before prociding &quot;task completion&quot; output.</li>
+</ul>
+</li>
+</ol>
+<p>Short term memory is a memory that lives only during the crew execution. Every time that you run a crew ad you kick it off, it strats from the blank. This memory is useful because as different agents try to accomplish different tasks, they store different things that they learn in this memory. And this memory is shared across all the agents, meaning that an agent number 2 or 4 can tap into learnings form agent number 1.
+So tthe short term memory is something that helps to share context during the crew execution, so that you get better outcomes.</p>
+<ol start="2">
+<li><strong>Short-term memory</strong>
+<ul>
+<li>Memory stored after execution of curent tasks.</li>
+<li>Long term memory can be used in any future tasks,</li>
+<li>Lead &quot;self-improving agents&quot;.</li>
+</ul>
+</li>
+</ol>
+<p>Long term memory is <strong>stored in a database locally</strong>, and that allows yuor angent to learn form previous exectuations. So every time that your agent completes a task, it <strong>self-critiques</strong> itself to learn what it could have done better, or what are the things that should be in there that are not.</p>
+<ol start="3">
+<li><strong>Entity memory</strong>
+It is only during the excution, it stores what are subjects that are be discussing. So if your agent is trying to learn smething abut a specific company it maight store that company as an entity and its understanding of this company in this database as well.</li>
+</ol>
+<h3 id="code-multi-agent-custimer-support-automation">Code: Multi agent custimer support automation</h3>
+<p>In this lesson, you will learn about the six key elements which help make Agents perform even better:</p>
+<ul>
+<li>Role Playing</li>
+<li>Focus</li>
+<li>Tools</li>
+<li>Cooperation</li>
+<li>Guardrails</li>
+<li>Memory</li>
+</ul>
+<p>The libraries are already installed in the classroom. If you're running this notebook on your own machine, you can install the following:</p>
+<pre><code class="language-Python">!pip install crewai==<span class="hljs-number">0.28</span><span class="hljs-number">.8</span> crewai_tools==<span class="hljs-number">0.1</span><span class="hljs-number">.6</span> langchain_community==<span class="hljs-number">0.0</span><span class="hljs-number">.29</span>
+</code></pre>
+<pre><code class="language-python"><span class="hljs-comment"># Warning control</span>
+<span class="hljs-keyword">import</span> warnings
+warnings.filterwarnings(<span class="hljs-string">&#x27;ignore&#x27;</span>)
+</code></pre>
+<ul>
+<li>Import libraries, API and LLM</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai <span class="hljs-keyword">import</span> Agent, Task, Crew
+</code></pre>
+<pre><code class="language-python"><span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> utils <span class="hljs-keyword">import</span> get_openai_api_key
+
+openai_api_key = get_openai_api_key()
+os.environ[<span class="hljs-string">&quot;OPENAI_MODEL_NAME&quot;</span>] = <span class="hljs-string">&#x27;gpt-3.5-turbo&#x27;</span>
+</code></pre>
+<h4 id="role-playing-focus-and-cooperation">Role Playing, Focus and Cooperation</h4>
+<pre><code class="language-python">support_agent = Agent(
+    role=<span class="hljs-string">&quot;Senior Support Representative&quot;</span>,
+	goal=<span class="hljs-string">&quot;Be the most friendly and helpful &quot;</span>
+        <span class="hljs-string">&quot;support representative in your team&quot;</span>,
+	backstory=(
+		<span class="hljs-string">&quot;You work at crewAI (https://crewai.com) and &quot;</span>
+        <span class="hljs-string">&quot; are now working on providing &quot;</span>
+		<span class="hljs-string">&quot;support to {customer}, a super important customer &quot;</span>
+        <span class="hljs-string">&quot; for your company.&quot;</span>
+		<span class="hljs-string">&quot;You need to make sure that you provide the best support!&quot;</span>
+		<span class="hljs-string">&quot;Make sure to provide full complete answers, &quot;</span>
+        <span class="hljs-string">&quot; and make no assumptions.&quot;</span>
+	),
+	allow_delegation=<span class="hljs-literal">False</span>,
+	verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<p><img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743802736381.png" alt="1743802736381"></p>
+<ul>
+<li>By not setting <code>allow_delegation=False</code>, <code>allow_delegation</code> takes its default value of being <code>True</code>.</li>
+<li>This means the agent <em>can</em> delegate its work to another agent which is better suited to do a particular task.</li>
+</ul>
+<pre><code class="language-python">support_quality_assurance_agent = Agent(
+	role=<span class="hljs-string">&quot;Support Quality Assurance Specialist&quot;</span>,
+	goal=<span class="hljs-string">&quot;Get recognition for providing the &quot;</span>
+    <span class="hljs-string">&quot;best support quality assurance in your team&quot;</span>,
+	backstory=(
+		<span class="hljs-string">&quot;You work at crewAI (https://crewai.com) and &quot;</span>
+        <span class="hljs-string">&quot;are now working with your team &quot;</span>
+		<span class="hljs-string">&quot;on a request from {customer} ensuring that &quot;</span>
+        <span class="hljs-string">&quot;the support representative is &quot;</span>
+		<span class="hljs-string">&quot;providing the best support possible.\n&quot;</span>
+		<span class="hljs-string">&quot;You need to make sure that the support representative &quot;</span>
+        <span class="hljs-string">&quot;is providing full&quot;</span>
+		<span class="hljs-string">&quot;complete answers, and make no assumptions.&quot;</span>
+	),
+	verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<ul>
+<li><strong>Role Playing</strong>: Both agents have been given a role, goal and backstory.</li>
+<li><strong>Focus</strong>: Both agents have been prompted to get into the character of the roles they are playing.</li>
+<li><strong>Cooperation</strong>: Support Quality Assurance Agent can delegate work back to the Support Agent, allowing for these agents to work together.</li>
+</ul>
+<h4 id="tools-guardrails-and-memory">Tools, Guardrails and Memory</h4>
+<h5 id="tools">Tools</h5>
+<ul>
+<li>Import CrewAI tools</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai_tools <span class="hljs-keyword">import</span> SerperDevTool, \
+                         ScrapeWebsiteTool, \
+                         WebsiteSearchTool
+</code></pre>
+<h5 id="possible-custom-tools">Possible Custom Tools</h5>
+<ul>
+<li>
+<p>Load customer data</p>
+</li>
+<li>
+<p>Tap into previous conversations</p>
+</li>
+<li>
+<p>Load data from a CRM</p>
+</li>
+<li>
+<p>Checking existing bug reports</p>
+</li>
+<li>
+<p>Checking existing feature requests</p>
+</li>
+<li>
+<p>Checking ongoing tickets</p>
+</li>
+<li>
+<p>... and more</p>
+</li>
+<li>
+<p>Some ways of using CrewAI tools.</p>
+</li>
+</ul>
+<pre><code class="language-Python">search_tool = SerperDevTool()
+scrape_tool = ScrapeWebsiteTool()
+</code></pre>
+<ul>
+<li>Instantiate a document scraper tool.</li>
+<li>The tool will scrape a page (only 1 URL) of the CrewAI documentation.</li>
+</ul>
+<pre><code class="language-python">docs_scrape_tool = ScrapeWebsiteTool(
+    website_url=<span class="hljs-string">&quot;https://docs.crewai.com/how-to/Creating-a-Crew-and-kick-it-off/&quot;</span>
+)
+</code></pre>
+<h6 id="different-ways-to-give-agents-tools">Different Ways to Give Agents Tools</h6>
+<ul>
+<li>Agent Level: The Agent can use the Tool(s) on any Task it performs.</li>
+<li>Task Level: The Agent will only use the Tool(s) when performing that specific Task.</li>
+</ul>
+<p><strong>Note</strong>: Task Tools override the Agent Tools.</p>
+<h5 id="creating-tasks">Creating Tasks</h5>
+<ul>
+<li>You are passing the Tool on the Task Level.</li>
+</ul>
+<pre><code class="language-python">inquiry_resolution = Task(
+    description=(
+        <span class="hljs-string">&quot;{customer} just reached out with a super important ask:\n&quot;</span>
+	    <span class="hljs-string">&quot;{inquiry}\n\n&quot;</span>
+        <span class="hljs-string">&quot;{person} from {customer} is the one that reached out. &quot;</span>
+		<span class="hljs-string">&quot;Make sure to use everything you know &quot;</span>
+        <span class="hljs-string">&quot;to provide the best support possible.&quot;</span>
+		<span class="hljs-string">&quot;You must strive to provide a complete &quot;</span>
+        <span class="hljs-string">&quot;and accurate response to the customer&#x27;s inquiry.&quot;</span>
+    ),
+    expected_output=(
+	    <span class="hljs-string">&quot;A detailed, informative response to the &quot;</span>
+        <span class="hljs-string">&quot;customer&#x27;s inquiry that addresses &quot;</span>
+        <span class="hljs-string">&quot;all aspects of their question.\n&quot;</span>
+        <span class="hljs-string">&quot;The response should include references &quot;</span>
+        <span class="hljs-string">&quot;to everything you used to find the answer, &quot;</span>
+        <span class="hljs-string">&quot;including external data or solutions. &quot;</span>
+        <span class="hljs-string">&quot;Ensure the answer is complete, &quot;</span>
+		<span class="hljs-string">&quot;leaving no questions unanswered, and maintain a helpful and friendly &quot;</span>
+		<span class="hljs-string">&quot;tone throughout.&quot;</span>
+    ),
+	tools=[docs_scrape_tool],
+    agent=support_agent,
+)
+</code></pre>
+<ul>
+<li><code>quality_assurance_review</code> is not using any Tool(s)</li>
+<li>Here the QA Agent will only review the work of the Support Agent</li>
+</ul>
+<pre><code class="language-python">quality_assurance_review = Task(
+    description=(
+        <span class="hljs-string">&quot;Review the response drafted by the Senior Support Representative for {customer}&#x27;s inquiry. &quot;</span>
+        <span class="hljs-string">&quot;Ensure that the answer is comprehensive, accurate, and adheres to the &quot;</span>
+		<span class="hljs-string">&quot;high-quality standards expected for customer support.\n&quot;</span>
+        <span class="hljs-string">&quot;Verify that all parts of the customer&#x27;s inquiry &quot;</span>
+        <span class="hljs-string">&quot;have been addressed &quot;</span>
+		<span class="hljs-string">&quot;thoroughly, with a helpful and friendly tone.\n&quot;</span>
+        <span class="hljs-string">&quot;Check for references and sources used to &quot;</span>
+        <span class="hljs-string">&quot; find the information, &quot;</span>
+		<span class="hljs-string">&quot;ensuring the response is well-supported and &quot;</span>
+        <span class="hljs-string">&quot;leaves no questions unanswered.&quot;</span>
+    ),
+    expected_output=(
+        <span class="hljs-string">&quot;A final, detailed, and informative response &quot;</span>
+        <span class="hljs-string">&quot;ready to be sent to the customer.\n&quot;</span>
+        <span class="hljs-string">&quot;This response should fully address the &quot;</span>
+        <span class="hljs-string">&quot;customer&#x27;s inquiry, incorporating all &quot;</span>
+		<span class="hljs-string">&quot;relevant feedback and improvements.\n&quot;</span>
+		<span class="hljs-string">&quot;Don&#x27;t be too formal, we are a chill and cool company &quot;</span>
+	    <span class="hljs-string">&quot;but maintain a professional and friendly tone throughout.&quot;</span>
+    ),
+    agent=support_quality_assurance_agent,
+)
+
+</code></pre>
+<h5 id="creating-the-crew">Creating the Crew</h5>
+<h6 id="memory-1">Memory</h6>
+<ul>
+<li>Setting <code>memory=True</code> when putting the crew together enables Memory.</li>
+</ul>
+<pre><code class="language-python">crew = Crew(
+  agents=[support_agent, support_quality_assurance_agent],
+  tasks=[inquiry_resolution, quality_assurance_review],
+  verbose=<span class="hljs-number">2</span>,
+  memory=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<h5 id="running-the-crew">Running the Crew</h5>
+<p><strong>Note</strong>: LLMs can provide different outputs for they same input, so what you get might be different than what you see in the video.</p>
+<h6 id="guardrails-1">Guardrails</h6>
+<ul>
+<li>By running the execution below, you can see that the agents and the responses are within the scope of what we expect from them.</li>
+</ul>
+<pre><code class="language-python">inputs = {
+    <span class="hljs-string">&quot;customer&quot;</span>: <span class="hljs-string">&quot;DeepLearningAI&quot;</span>,
+    <span class="hljs-string">&quot;person&quot;</span>: <span class="hljs-string">&quot;Andrew Ng&quot;</span>,
+    <span class="hljs-string">&quot;inquiry&quot;</span>: <span class="hljs-string">&quot;I need help with setting up a Crew &quot;</span>
+               <span class="hljs-string">&quot;and kicking it off, specifically &quot;</span>
+               <span class="hljs-string">&quot;how can I add memory to my crew? &quot;</span>
+               <span class="hljs-string">&quot;Can you provide guidance?&quot;</span>
+}
+result = crew.kickoff(inputs=inputs)
+</code></pre>
+<ul>
+<li>Display the final result as Markdown.</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> IPython.display <span class="hljs-keyword">import</span> Markdown
+Markdown(result)
+</code></pre>
+<h3 id="mental-framework-for-agent-creation">Mental Framework for agent creation</h3>
+<ul>
+<li>Agen &quot;self improve&quot; using memory</li>
+<li>Guardrails prevents agents from going into &quot;rabbit holes&quot;(unproductive, repetitive loops)</li>
+<li>Agent always attempt to get to an answer(avoid iterating indefinitely)</li>
+<li>Foucs
+<ul>
+<li>narrowly defined task</li>
+<li>specific agent roles and objectives</li>
+<li>limit set of tools assigned to one agent</li>
+<li>smaller tasks and focus agents perform better than bigger tasks ad agents that have too much on their hands</li>
+</ul>
+</li>
+</ul>
+<h3 id="key-elements-of-agent-tools">Key elements of agent tools</h3>
+<p>Tools are waht allow your agents to communicate with the external world to get out of teir bubble of just chating with themselves and actually perform actions, have an actual impact on your flows, on your systems, on your users, and on your company.
+<img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743884902394.png" alt="1743884902394"></p>
+<h4 id="veratile">Veratile</h4>
+<p>First thing, a tool needs to be able ti accept different kinds of requests.
+The tool is the connection between the AI apps that have fuzzy inputs wih the external world that have strong typed inputs.</p>
+<p>The tool can handle different types of inputs.
+<img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743884953718.png" alt="1743884953718"></p>
+<h4 id="falut-tolerant">Falut-tolerant</h4>
+<p>What happens when an exception/error occurs?
+Option 1: stop execution
+Option 2: Fail gracefully(and try again)</p>
+<ul>
+<li>send error message back to agent</li>
+<li>ask agent to retry given the error message</li>
+</ul>
+<h4 id="caching">Caching</h4>
+<p>Having a caching layer that prevents unnecessary requests from happening is crucial to make sure that your're building optimal crews.</p>
+<p>Cross-agent caching: if one agent tried to use a tool with a given set of argumrnts and another agent tried to use the same tool with the same set of arguments, even if they are different agents, they are going to actually use a cache layer. So the second time they are try to use a tool, they are not going to do that API call.</p>
+<ul>
+<li>Prevent unnecessary requests</li>
+<li>Stay within rate limits (number of requests per second allowed for an API call)</li>
+<li>Save time (retrieving cached results is much faster than an API call)</li>
+</ul>
+<h3 id="l4-tools-for-a-customer-outreach-campaign">L4: Tools for a Customer Outreach Campaign</h3>
+<p>In this lesson, you will learn more about Tools. You'll focus on three key elements of Tools:</p>
+<ul>
+<li>Versatility</li>
+<li>Fault Tolerance</li>
+<li>Caching</li>
+</ul>
+<p>The libraries are already installed in the classroom. If you're running this notebook on your own machine, you can install the following:</p>
+<pre><code class="language-Python">!pip install crewai==<span class="hljs-number">0.28</span><span class="hljs-number">.8</span> crewai_tools==<span class="hljs-number">0.1</span><span class="hljs-number">.6</span> langchain_community==<span class="hljs-number">0.0</span><span class="hljs-number">.29</span>
+</code></pre>
+<pre><code class="language-python"><span class="hljs-comment"># Warning control</span>
+<span class="hljs-keyword">import</span> warnings
+warnings.filterwarnings(<span class="hljs-string">&#x27;ignore&#x27;</span>)
+</code></pre>
+<ul>
+<li>Import libraries, APIs and LLM</li>
+<li><a href="https://serper.dev">Serper</a></li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai <span class="hljs-keyword">import</span> Agent, Task, Crew
+</code></pre>
+<p><strong>Note</strong>:</p>
+<ul>
+<li>The video uses <code>gpt-4-turbo</code>, but due to certain constraints, and in order to offer this course for free to everyone, the code you'll run here will use <code>gpt-3.5-turbo</code>.</li>
+<li>You can use <code>gpt-4-turbo</code> when you run the notebook <em>locally</em> (using <code>gpt-4-turbo</code> will not work on the platform)</li>
+<li>Thank you for your understanding!</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> utils <span class="hljs-keyword">import</span> get_openai_api_key, pretty_print_result
+<span class="hljs-keyword">from</span> utils <span class="hljs-keyword">import</span> get_serper_api_key
+
+openai_api_key = get_openai_api_key()
+os.environ[<span class="hljs-string">&quot;OPENAI_MODEL_NAME&quot;</span>] = <span class="hljs-string">&#x27;gpt-3.5-turbo&#x27;</span>
+os.environ[<span class="hljs-string">&quot;SERPER_API_KEY&quot;</span>] = get_serper_api_key()
+</code></pre>
+<h4 id="creating-agents">Creating Agents</h4>
+<pre><code class="language-python">sales_rep_agent = Agent(
+    role=<span class="hljs-string">&quot;Sales Representative&quot;</span>,
+    goal=<span class="hljs-string">&quot;Identify high-value leads that match &quot;</span>
+         <span class="hljs-string">&quot;our ideal customer profile&quot;</span>,
+    backstory=(
+        <span class="hljs-string">&quot;As a part of the dynamic sales team at CrewAI, &quot;</span>
+        <span class="hljs-string">&quot;your mission is to scour &quot;</span>
+        <span class="hljs-string">&quot;the digital landscape for potential leads. &quot;</span>
+        <span class="hljs-string">&quot;Armed with cutting-edge tools &quot;</span>
+        <span class="hljs-string">&quot;and a strategic mindset, you analyze data, &quot;</span>
+        <span class="hljs-string">&quot;trends, and interactions to &quot;</span>
+        <span class="hljs-string">&quot;unearth opportunities that others might overlook. &quot;</span>
+        <span class="hljs-string">&quot;Your work is crucial in paving the way &quot;</span>
+        <span class="hljs-string">&quot;for meaningful engagements and driving the company&#x27;s growth.&quot;</span>
+    ),
+    allow_delegation=<span class="hljs-literal">False</span>,
+    verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<pre><code class="language-python">lead_sales_rep_agent = Agent(
+    role=<span class="hljs-string">&quot;Lead Sales Representative&quot;</span>,
+    goal=<span class="hljs-string">&quot;Nurture leads with personalized, compelling communications&quot;</span>,
+    backstory=(
+        <span class="hljs-string">&quot;Within the vibrant ecosystem of CrewAI&#x27;s sales department, &quot;</span>
+        <span class="hljs-string">&quot;you stand out as the bridge between potential clients &quot;</span>
+        <span class="hljs-string">&quot;and the solutions they need.&quot;</span>
+        <span class="hljs-string">&quot;By creating engaging, personalized messages, &quot;</span>
+        <span class="hljs-string">&quot;you not only inform leads about our offerings &quot;</span>
+        <span class="hljs-string">&quot;but also make them feel seen and heard.&quot;</span>
+        <span class="hljs-string">&quot;Your role is pivotal in converting interest &quot;</span>
+        <span class="hljs-string">&quot;into action, guiding leads through the journey &quot;</span>
+        <span class="hljs-string">&quot;from curiosity to commitment.&quot;</span>
+    ),
+    allow_delegation=<span class="hljs-literal">False</span>,
+    verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<h4 id="creating-tools">Creating Tools</h4>
+<h5 id="crewai-tools">crewAI Tools</h5>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai_tools <span class="hljs-keyword">import</span> DirectoryReadTool, \
+                         FileReadTool, \
+                         SerperDevTool
+</code></pre>
+<pre><code class="language-python">directory_read_tool = DirectoryReadTool(directory=<span class="hljs-string">&#x27;./instructions&#x27;</span>)
+file_read_tool = FileReadTool()
+search_tool = SerperDevTool()
+</code></pre>
+<h5 id="custom-tool">Custom Tool</h5>
+<ul>
+<li>Create a custom tool using crewAi's <a href="https://docs.crewai.com/core-concepts/Tools/#subclassing-basetool">BaseTool</a> class</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai_tools <span class="hljs-keyword">import</span> BaseTool
+</code></pre>
+<ul>
+<li>Every Tool needs to have a <code>name</code> and a <code>description</code>.</li>
+<li>For simplicity and classroom purposes, <code>SentimentAnalysisTool</code> will return <code>positive</code> for every text.</li>
+<li>When running locally, you can customize the code with your logic in the <code>_run</code> function.</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">SentimentAnalysisTool</span>(<span class="hljs-title class_ inherited__">BaseTool</span>):
+    name: <span class="hljs-built_in">str</span> =<span class="hljs-string">&quot;Sentiment Analysis Tool&quot;</span>
+    description: <span class="hljs-built_in">str</span> = (<span class="hljs-string">&quot;Analyzes the sentiment of text &quot;</span>
+         <span class="hljs-string">&quot;to ensure positive and engaging communication.&quot;</span>)
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_run</span>(<span class="hljs-params">self, text: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+        <span class="hljs-comment"># Your custom code tool goes here</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;positive&quot;</span>
+</code></pre>
+<pre><code class="language-python">sentiment_analysis_tool = SentimentAnalysisTool()
+</code></pre>
+<h4 id="creating-tasks-1">Creating Tasks</h4>
+<ul>
+<li>The Lead Profiling Task is using crewAI Tools.</li>
+</ul>
+<pre><code class="language-python">lead_profiling_task = Task(
+    description=(
+        <span class="hljs-string">&quot;Conduct an in-depth analysis of {lead_name}, &quot;</span>
+        <span class="hljs-string">&quot;a company in the {industry} sector &quot;</span>
+        <span class="hljs-string">&quot;that recently showed interest in our solutions. &quot;</span>
+        <span class="hljs-string">&quot;Utilize all available data sources &quot;</span>
+        <span class="hljs-string">&quot;to compile a detailed profile, &quot;</span>
+        <span class="hljs-string">&quot;focusing on key decision-makers, recent business &quot;</span>
+        <span class="hljs-string">&quot;developments, and potential needs &quot;</span>
+        <span class="hljs-string">&quot;that align with our offerings. &quot;</span>
+        <span class="hljs-string">&quot;This task is crucial for tailoring &quot;</span>
+        <span class="hljs-string">&quot;our engagement strategy effectively.\n&quot;</span>
+        <span class="hljs-string">&quot;Don&#x27;t make assumptions and &quot;</span>
+        <span class="hljs-string">&quot;only use information you absolutely sure about.&quot;</span>
+    ),
+    expected_output=(
+        <span class="hljs-string">&quot;A comprehensive report on {lead_name}, &quot;</span>
+        <span class="hljs-string">&quot;including company background, &quot;</span>
+        <span class="hljs-string">&quot;key personnel, recent milestones, and identified needs. &quot;</span>
+        <span class="hljs-string">&quot;Highlight potential areas where &quot;</span>
+        <span class="hljs-string">&quot;our solutions can provide value, &quot;</span>
+        <span class="hljs-string">&quot;and suggest personalized engagement strategies.&quot;</span>
+    ),
+    tools=[directory_read_tool, file_read_tool, search_tool],
+    agent=sales_rep_agent,
+)
+</code></pre>
+<ul>
+<li>The Personalized Outreach Task is using your custom Tool <code>SentimentAnalysisTool</code>, as well as crewAI's <code>SerperDevTool</code> (search_tool).</li>
+</ul>
+<pre><code class="language-python">personalized_outreach_task = Task(
+    description=(
+        <span class="hljs-string">&quot;Using the insights gathered from &quot;</span>
+        <span class="hljs-string">&quot;the lead profiling report on {lead_name}, &quot;</span>
+        <span class="hljs-string">&quot;craft a personalized outreach campaign &quot;</span>
+        <span class="hljs-string">&quot;aimed at {key_decision_maker}, &quot;</span>
+        <span class="hljs-string">&quot;the {position} of {lead_name}. &quot;</span>
+        <span class="hljs-string">&quot;The campaign should address their recent {milestone} &quot;</span>
+        <span class="hljs-string">&quot;and how our solutions can support their goals. &quot;</span>
+        <span class="hljs-string">&quot;Your communication must resonate &quot;</span>
+        <span class="hljs-string">&quot;with {lead_name}&#x27;s company culture and values, &quot;</span>
+        <span class="hljs-string">&quot;demonstrating a deep understanding of &quot;</span>
+        <span class="hljs-string">&quot;their business and needs.\n&quot;</span>
+        <span class="hljs-string">&quot;Don&#x27;t make assumptions and only &quot;</span>
+        <span class="hljs-string">&quot;use information you absolutely sure about.&quot;</span>
+    ),
+    expected_output=(
+        <span class="hljs-string">&quot;A series of personalized email drafts &quot;</span>
+        <span class="hljs-string">&quot;tailored to {lead_name}, &quot;</span>
+        <span class="hljs-string">&quot;specifically targeting {key_decision_maker}.&quot;</span>
+        <span class="hljs-string">&quot;Each draft should include &quot;</span>
+        <span class="hljs-string">&quot;a compelling narrative that connects our solutions &quot;</span>
+        <span class="hljs-string">&quot;with their recent achievements and future goals. &quot;</span>
+        <span class="hljs-string">&quot;Ensure the tone is engaging, professional, &quot;</span>
+        <span class="hljs-string">&quot;and aligned with {lead_name}&#x27;s corporate identity.&quot;</span>
+    ),
+    tools=[sentiment_analysis_tool, search_tool],
+    agent=lead_sales_rep_agent,
+)
+</code></pre>
+<h4 id="creating-the-crew-1">Creating the Crew</h4>
+<pre><code class="language-python">crew = Crew(
+    agents=[sales_rep_agent, 
+            lead_sales_rep_agent],
+    
+    tasks=[lead_profiling_task, 
+           personalized_outreach_task],
+	
+    verbose=<span class="hljs-number">2</span>,
+	memory=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<h4 id="running-the-crew-1">Running the Crew</h4>
+<p><strong>Note</strong>: LLMs can provide different outputs for they same input, so what you get might be different than what you see in the video.</p>
+<pre><code class="language-python">inputs = {
+    <span class="hljs-string">&quot;lead_name&quot;</span>: <span class="hljs-string">&quot;DeepLearningAI&quot;</span>,
+    <span class="hljs-string">&quot;industry&quot;</span>: <span class="hljs-string">&quot;Online Learning Platform&quot;</span>,
+    <span class="hljs-string">&quot;key_decision_maker&quot;</span>: <span class="hljs-string">&quot;Andrew Ng&quot;</span>,
+    <span class="hljs-string">&quot;position&quot;</span>: <span class="hljs-string">&quot;CEO&quot;</span>,
+    <span class="hljs-string">&quot;milestone&quot;</span>: <span class="hljs-string">&quot;product launch&quot;</span>
+}
+
+result = crew.kickoff(inputs=inputs)
+</code></pre>
+<ul>
+<li>Display the final result as Markdown.</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> IPython.display <span class="hljs-keyword">import</span> Markdown
+Markdown(result)
+</code></pre>
+<h3 id="key-elements-of-well-defined-tasks">Key elements of well defined tasks</h3>
+<p><img src="file:///e:\Study\Class File\2025 Spring\ADSP 34002 IP09 (Spring 2025) Capstone I\Model 2\Research Assignment\image\crewai\1743889099591.png" alt="1743889099591">
+<strong>Task</strong>:</p>
+<ul>
+<li>Clear description</li>
+<li>Set a clear and concise expectation</li>
+<li>Set context</li>
+<li>Set a callback</li>
+<li>Override Agent tools with specific task tools</li>
+<li>Force human input before end of task</li>
+<li>Execute asynchronously</li>
+<li>Output as Pydantic/JSON/file</li>
+<li>Run in parallel
+Crewai makes aure that it is mandatory for you to set at least two attributes on every task that you create: the <strong>description</strong> and <strong>expected outcome</strong>. That is used to build better internal prompts.</li>
+</ul>
+<h3 id="l5-automate-event-planning">L5: Automate Event Planning</h3>
+<p>In this lesson, you will learn more about Tasks.</p>
+<p>The libraries are already installed in the classroom. If you're running this notebook on your own machine, you can install the following:</p>
+<pre><code class="language-Python">!pip install crewai==<span class="hljs-number">0.28</span><span class="hljs-number">.8</span> crewai_tools==<span class="hljs-number">0.1</span><span class="hljs-number">.6</span> langchain_community==<span class="hljs-number">0.0</span><span class="hljs-number">.29</span>
+</code></pre>
+<pre><code class="language-python"><span class="hljs-comment"># Warning control</span>
+<span class="hljs-keyword">import</span> warnings
+warnings.filterwarnings(<span class="hljs-string">&#x27;ignore&#x27;</span>)
+</code></pre>
+<ul>
+<li>Import libraries, APIs and LLM</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai <span class="hljs-keyword">import</span> Agent, Crew, Task
+</code></pre>
+<p><strong>Note</strong>:</p>
+<ul>
+<li>The video uses <code>gpt-4-turbo</code>, but due to certain constraints, and in order to offer this course for free to everyone, the code you'll run here will use <code>gpt-3.5-turbo</code>.</li>
+<li>You can use <code>gpt-4-turbo</code> when you run the notebook <em>locally</em> (using <code>gpt-4-turbo</code> will not work on the platform)</li>
+<li>Thank you for your understanding!</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> utils <span class="hljs-keyword">import</span> get_openai_api_key,get_serper_api_key
+
+openai_api_key = get_openai_api_key()
+os.environ[<span class="hljs-string">&quot;OPENAI_MODEL_NAME&quot;</span>] = <span class="hljs-string">&#x27;gpt-3.5-turbo&#x27;</span>
+os.environ[<span class="hljs-string">&quot;SERPER_API_KEY&quot;</span>] = get_serper_api_key()
+</code></pre>
+<h4 id="crewai-tools-1">crewAI Tools</h4>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> crewai_tools <span class="hljs-keyword">import</span> ScrapeWebsiteTool, SerperDevTool
+
+<span class="hljs-comment"># Initialize the tools</span>
+search_tool = SerperDevTool()
+scrape_tool = ScrapeWebsiteTool()
+</code></pre>
+<h4 id="creating-agents-1">Creating Agents</h4>
+<pre><code class="language-python"><span class="hljs-comment"># Agent 1: Venue Coordinator</span>
+venue_coordinator = Agent(
+    role=<span class="hljs-string">&quot;Venue Coordinator&quot;</span>,
+    goal=<span class="hljs-string">&quot;Identify and book an appropriate venue &quot;</span>
+    <span class="hljs-string">&quot;based on event requirements&quot;</span>,
+    tools=[search_tool, scrape_tool],
+    verbose=<span class="hljs-literal">True</span>,
+    backstory=(
+        <span class="hljs-string">&quot;With a keen sense of space and &quot;</span>
+        <span class="hljs-string">&quot;understanding of event logistics, &quot;</span>
+        <span class="hljs-string">&quot;you excel at finding and securing &quot;</span>
+        <span class="hljs-string">&quot;the perfect venue that fits the event&#x27;s theme, &quot;</span>
+        <span class="hljs-string">&quot;size, and budget constraints.&quot;</span>
+    )
+)
+</code></pre>
+<pre><code class="language-python"> <span class="hljs-comment"># Agent 2: Logistics Manager</span>
+logistics_manager = Agent(
+    role=<span class="hljs-string">&#x27;Logistics Manager&#x27;</span>,
+    goal=(
+        <span class="hljs-string">&quot;Manage all logistics for the event &quot;</span>
+        <span class="hljs-string">&quot;including catering and equipmen&quot;</span>
+    ),
+    tools=[search_tool, scrape_tool],
+    verbose=<span class="hljs-literal">True</span>,
+    backstory=(
+        <span class="hljs-string">&quot;Organized and detail-oriented, &quot;</span>
+        <span class="hljs-string">&quot;you ensure that every logistical aspect of the event &quot;</span>
+        <span class="hljs-string">&quot;from catering to equipment setup &quot;</span>
+        <span class="hljs-string">&quot;is flawlessly executed to create a seamless experience.&quot;</span>
+    )
+)
+</code></pre>
+<pre><code class="language-python"><span class="hljs-comment"># Agent 3: Marketing and Communications Agent</span>
+marketing_communications_agent = Agent(
+    role=<span class="hljs-string">&quot;Marketing and Communications Agent&quot;</span>,
+    goal=<span class="hljs-string">&quot;Effectively market the event and &quot;</span>
+         <span class="hljs-string">&quot;communicate with participants&quot;</span>,
+    tools=[search_tool, scrape_tool],
+    verbose=<span class="hljs-literal">True</span>,
+    backstory=(
+        <span class="hljs-string">&quot;Creative and communicative, &quot;</span>
+        <span class="hljs-string">&quot;you craft compelling messages and &quot;</span>
+        <span class="hljs-string">&quot;engage with potential attendees &quot;</span>
+        <span class="hljs-string">&quot;to maximize event exposure and participation.&quot;</span>
+    )
+)
+</code></pre>
+<h4 id="creating-venue-pydantic-object">Creating Venue Pydantic Object</h4>
+<ul>
+<li>Create a class <code>VenueDetails</code> using <a href="https://docs.pydantic.dev/latest/api/base_model/">Pydantic BaseModel</a>.</li>
+<li>Agents will populate this object with information about different venues by creating different instances of it.</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> pydantic <span class="hljs-keyword">import</span> BaseModel
+<span class="hljs-comment"># Define a Pydantic model for venue details </span>
+<span class="hljs-comment"># (demonstrating Output as Pydantic)</span>
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">VenueDetails</span>(<span class="hljs-title class_ inherited__">BaseModel</span>):
+    name: <span class="hljs-built_in">str</span>
+    address: <span class="hljs-built_in">str</span>
+    capacity: <span class="hljs-built_in">int</span>
+    booking_status: <span class="hljs-built_in">str</span>
+</code></pre>
+<h4 id="creating-tasks-2">Creating Tasks</h4>
+<ul>
+<li>By using <code>output_json</code>, you can specify the structure of the output you want.</li>
+<li>By using <code>output_file</code>, you can get your output in a file.</li>
+<li>By setting <code>human_input=True</code>, the task will ask for human feedback (whether you like the results or not) before finalising it.</li>
+</ul>
+<pre><code class="language-python">venue_task = Task(
+    description=<span class="hljs-string">&quot;Find a venue in {event_city} &quot;</span>
+                <span class="hljs-string">&quot;that meets criteria for {event_topic}.&quot;</span>,
+    expected_output=<span class="hljs-string">&quot;All the details of a specifically chosen&quot;</span>
+                    <span class="hljs-string">&quot;venue you found to accommodate the event.&quot;</span>,
+    human_input=<span class="hljs-literal">True</span>,
+    output_json=VenueDetails,
+    output_file=<span class="hljs-string">&quot;venue_details.json&quot;</span>,  
+      <span class="hljs-comment"># Outputs the venue details as a JSON file</span>
+    agent=venue_coordinator
+)
+</code></pre>
+<ul>
+<li>By setting <code>async_execution=True</code>, it means the task can run in parallel with the tasks which come after it.</li>
+</ul>
+<pre><code class="language-python">logistics_task = Task(
+    description=<span class="hljs-string">&quot;Coordinate catering and &quot;</span>
+                 <span class="hljs-string">&quot;equipment for an event &quot;</span>
+                 <span class="hljs-string">&quot;with {expected_participants} participants &quot;</span>
+                 <span class="hljs-string">&quot;on {tentative_date}.&quot;</span>,
+    expected_output=<span class="hljs-string">&quot;Confirmation of all logistics arrangements &quot;</span>
+                    <span class="hljs-string">&quot;including catering and equipment setup.&quot;</span>,
+    human_input=<span class="hljs-literal">True</span>,
+    async_execution=<span class="hljs-literal">True</span>,
+    agent=logistics_manager
+)
+</code></pre>
+<pre><code class="language-python">marketing_task = Task(
+    description=<span class="hljs-string">&quot;Promote the {event_topic} &quot;</span>
+                <span class="hljs-string">&quot;aiming to engage at least&quot;</span>
+                <span class="hljs-string">&quot;{expected_participants} potential attendees.&quot;</span>,
+    expected_output=<span class="hljs-string">&quot;Report on marketing activities &quot;</span>
+                    <span class="hljs-string">&quot;and attendee engagement formatted as markdown.&quot;</span>,
+    async_execution=<span class="hljs-literal">True</span>,
+    output_file=<span class="hljs-string">&quot;marketing_report.md&quot;</span>,  <span class="hljs-comment"># Outputs the report as a text file</span>
+    agent=marketing_communications_agent
+)
+</code></pre>
+<h4 id="creating-the-crew-2">Creating the Crew</h4>
+<p><strong>Note</strong>: Since you set <code>async_execution=True</code> for <code>logistics_task</code> and <code>marketing_task</code> tasks, now the order for them does not matter in the <code>tasks</code> list.</p>
+<pre><code class="language-python"><span class="hljs-comment"># Define the crew with agents and tasks</span>
+event_management_crew = Crew(
+    agents=[venue_coordinator, 
+            logistics_manager, 
+            marketing_communications_agent],
+    
+    tasks=[venue_task, 
+           logistics_task, 
+           marketing_task],
+    
+    verbose=<span class="hljs-literal">True</span>
+)
+</code></pre>
+<h4 id="running-the-crew-2">Running the Crew</h4>
+<ul>
+<li>Set the inputs for the execution of the crew.</li>
+</ul>
+<pre><code class="language-python">event_details = {
+    <span class="hljs-string">&#x27;event_topic&#x27;</span>: <span class="hljs-string">&quot;Tech Innovation Conference&quot;</span>,
+    <span class="hljs-string">&#x27;event_description&#x27;</span>: <span class="hljs-string">&quot;A gathering of tech innovators &quot;</span>
+                         <span class="hljs-string">&quot;and industry leaders &quot;</span>
+                         <span class="hljs-string">&quot;to explore future technologies.&quot;</span>,
+    <span class="hljs-string">&#x27;event_city&#x27;</span>: <span class="hljs-string">&quot;San Francisco&quot;</span>,
+    <span class="hljs-string">&#x27;tentative_date&#x27;</span>: <span class="hljs-string">&quot;2024-09-15&quot;</span>,
+    <span class="hljs-string">&#x27;expected_participants&#x27;</span>: <span class="hljs-number">500</span>,
+    <span class="hljs-string">&#x27;budget&#x27;</span>: <span class="hljs-number">20000</span>,
+    <span class="hljs-string">&#x27;venue_type&#x27;</span>: <span class="hljs-string">&quot;Conference Hall&quot;</span>
+}
+</code></pre>
+<p><strong>Note 1</strong>: LLMs can provide different outputs for they same input, so what you get might be different than what you see in the video.</p>
+<p><strong>Note 2</strong>:</p>
+<ul>
+<li>Since you set <code>human_input=True</code> for some tasks, the execution will ask for your input before it finishes running.</li>
+<li>When it asks for feedback, use your mouse pointer to first click in the text box before typing anything.</li>
+</ul>
+<pre><code class="language-python">result = event_management_crew.kickoff(inputs=event_details)
+</code></pre>
+<ul>
+<li>Display the generated <code>venue_details.json</code> file.</li>
+</ul>
+<pre><code class="language-python"><span class="hljs-keyword">import</span> json
+<span class="hljs-keyword">from</span> pprint <span class="hljs-keyword">import</span> pprint
+
+<span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;venue_details.json&#x27;</span>) <span class="hljs-keyword">as</span> f:
+   data = json.load(f)
+
+pprint(data)
+</code></pre>
+<ul>
+<li>Display the generated <code>marketing_report.md</code> file.</li>
+</ul>
+<p><strong>Note</strong>: After <code>kickoff</code> execution has successfully ran, wait an extra 45 seconds for the <code>marketing_report.md</code> file to be generated. If you try to run the code below before the file has been generated, your output would look like:</p>
+<pre><code>marketing_report.md
+</code></pre>
+<p>If you see this output, wait some more and than try again.</p>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> IPython.display <span class="hljs-keyword">import</span> Markdown
+Markdown(<span class="hljs-string">&quot;marketing_report.md&quot;</span>)
+</code></pre>
+
+            
+            
+        </body>
+        </html>

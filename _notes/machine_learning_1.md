@@ -14,7 +14,9 @@ The Summary of MSADS Machine Learning I
 
 ## ==Unsupervised== Learning: Models find patterns from unlabeled data
 
-
+```python
+import numpy
+```
 
 
 

@@ -59,14 +59,14 @@ Work experience
   * Duties included: Tagging issues
   * Supervisor: Professor Git -->
   
-Skills
+<!-- Skills
 ======
 * Python, R, Matlab, C++, Github
 * Machine Learning
   * NLP
-  * Recommendation System
+  * Recommendation System -->
   <!-- * Sub-skill 2.3 -->
-* Financial Modeling
+<!-- * Financial Modeling -->
 
 Publications
 ======

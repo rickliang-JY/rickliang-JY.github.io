@@ -14,7 +14,33 @@ Education
 <!-- * Ph.D in Version Control Theory, GitHub University, 2018 (expected) -->
 * M.S. in Applied Data Science, University of Chicago, 2025(expected)
 * B.S. in Financial Mathematics, Beijing-Normal-Hong Kong Baptist University(BNBU), 2024
-* Summer Course: Artificial Intelligence and Machine Learning, University of Oxford, 2022
+* Summer School: University of Oxford, 2022
+
+Research experience
+======
+* 4/2025 – Present: Accelerating Adaptive Algorithms At Scale through Reparameterization
+  * The University of Chicago | Supervisor: Prof. Rebecca Willett
+  * Role: Research Assistant
+  * Implemented scalable approximations of EGOP: built low-rank estimation and periodic reparameterization modules based on auxiliary EGOP and randomized SVD, enabling faster convergence of Adam/Adagrad in large-scale model training without significant computational overhead.
+  * Conducted hyperparameter search and ablation studies on Fashion-MNIST, TinyMNIST, and EMNIST (Letters/Digits), comparing models with/without reparameterization, different optimizers, and learning-rate schedules; reported convergence speed, validation accuracy, memory footprint, and runtime to ensure reproducibility of results.
+  * Related work: [Faster Adaptive Optimization via Expected Gradient Outer Product Reparameterization](https://arxiv.org/abs/2502.01594) 
+
+
+* 4/2025 – Present: Pathology Multi-Agent RAG with ARPO-Based Policy Optimization  
+  * The University of Chicago | Supervisor: Prof. Utku Pamuksuz
+  * Role: Data Scientist
+  * Initiated and led the overall design of a “Multi-Agent RAG + ARPO” framework in the pathology domain: applied ARPO to focus on branching exploration and step-level credit assignment at high-uncertainty tool steps, strengthening strategy learning for which agent acts, when to act, and which retrieval method to use.
+
+* 4/2025 – Present: Deep Assortment Optimization  
+  * The University of Texas at Austin | Supervisor: Prof. Rui Gao
+  * Role: Research Intern
+  * Transformed discrete assortment selection into subset distribution learning, applying continuous relaxations (STGS/SIMPLE/NCPSS/SFESS) and permutation-invariant autoregressive modeling with RNN, enabling differentiable optimization under k-subset constraints.
+
+
+<!-- * Summer 2015: Research Assistant
+  * GitHub University
+  * Duties included: Tagging issues
+  * Supervisor: Professor Git -->
 
 Work experience
 ======
@@ -35,7 +61,7 @@ Work experience
   
 Skills
 ======
-* Python, R, Matlab, C++
+* Python, R, Matlab, C++, Github
 * Machine Learning
   * NLP
   * Recommendation System

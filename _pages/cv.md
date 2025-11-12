@@ -25,16 +25,17 @@ Research experience
   * **Conducted hyperparameter search and ablation studies on Fashion-MNIST, TinyMNIST, and EMNIST (Letters/Digits)**, comparing models with/without reparameterization, different optimizers, and learning-rate schedules; reported convergence speed, validation accuracy, memory footprint, and runtime to ensure reproducibility of results.
   * Related work: [Faster Adaptive Optimization via Expected Gradient Outer Product Reparameterization](https://arxiv.org/abs/2502.01594) 
 
-
-* 4/2025 – Present: Pathology Multi-Agent RAG with ARPO-Based Policy Optimization  
-  * Supervisor: Prof. Utku Pamuksuz (The University of Chicago)
-  * Role: Data Scientist
-  * Initiated and led the overall design of a “**Multi-Agent RAG + ARPO**” framework in the pathology domain: applied ARPO to focus on branching exploration and step-level credit assignment at high-uncertainty tool steps, strengthening strategy learning for which agent acts, when to act, and which retrieval method to use.
-
 * 4/2025 – Present: Deep Assortment Optimization  
   * Supervisor: Prof. Rui Gao (The University of Texas at Austin)
   * Role: Research Intern
   * Transformed discrete assortment selection into subset distribution learning, applying continuous relaxations (STGS/SIMPLE/NCPSS/SFESS) and permutation-invariant autoregressive modeling with RNN, enabling differentiable optimization under k-subset constraints.
+
+* 4/2025 – Present: Foundation Model Fine-tuning for Breast Cancer Biomarker Prediction  
+  * Supervisor: Prof. Utku Pamuksuz (The University of Chicago)
+  * Role: Data Scientist
+  * Adapting Direct Preference Optimization from natural language processing to computational pathology through self-supervised preference construction, enabling parameter-efficient fine-tuning of the TITAN foundation model for improved breast cancer biomarker prediction from whole slide images.
+
+
 
 
 <!-- * Summer 2015: Research Assistant

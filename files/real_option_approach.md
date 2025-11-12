@@ -1,4 +1,4 @@
----
+<!-- ---
 title: "Real Option Approach and Multi-Stage Fuzzy Decision-Making System for IP Valuation"
 collection: publications
 category: conferences
@@ -11,4 +11,4 @@ paperurl: 'http://rickliang-jy.github.io/files/real_option_approach.pdf'
 ---
 
 
-Abstract: This article delves into the pricing of intellectual property (IP) valuation and proposes the Real Option Approach (ROA) as a suitable method. Drawing on an overview of previous research on ROA, IP pricing, and fuzzy inference systems, a FIS approach is introduced to optimize real options. This approach utilizes a multi-stage fuzzy decision-making system comprising 15 variables and 11 fuzzy decision-making rules. The patent is considered as an asset that requires commercialization and generates positive cash flow after the development process. After establishing underlying distributions of parameters, simulation results suggest us to admit the system's stability and the pricing of intelligence property.
+Abstract: This article delves into the pricing of intellectual property (IP) valuation and proposes the Real Option Approach (ROA) as a suitable method. Drawing on an overview of previous research on ROA, IP pricing, and fuzzy inference systems, a FIS approach is introduced to optimize real options. This approach utilizes a multi-stage fuzzy decision-making system comprising 15 variables and 11 fuzzy decision-making rules. The patent is considered as an asset that requires commercialization and generates positive cash flow after the development process. After establishing underlying distributions of parameters, simulation results suggest us to admit the system's stability and the pricing of intelligence property. -->

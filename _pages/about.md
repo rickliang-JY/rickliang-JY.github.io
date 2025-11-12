@@ -11,7 +11,7 @@ Hi, I’m a graduate student at the University of Chicago pursuing an MS in Appl
 
 I am very fortunate to be advised by [Dr. Zhefang ZHOU](https://staff.uic.edu.cn/sherryzhou/en) from Beijing Normal - Hongkong Baptist University. I am honored to have collaborated on the [article](https://rickliang-jy.github.io/publication/nlp_analyst_reports_evidence%20_from_china) with [Dr. Yujia HU](https://staff.uic.edu.cn/yujiahu/en) and to have it published.
 
-You can find my CV here: [Jiayou Liang's Curriculum Vitae](../files/Jiayou_Liang_CV_latest.pdf.pdf)
+You can find my CV here: [Jiayou Liang's Curriculum Vitae](../files/Jiayou_Liang_CV_latest.pdf)
 
 
 

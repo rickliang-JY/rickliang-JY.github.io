@@ -35,8 +35,15 @@ Research experience
   * Role: Data Scientist
   * Adapting Direct Preference Optimization from natural language processing to computational pathology through self-supervised preference construction, enabling parameter-efficient fine-tuning of the TITAN foundation model for improved breast cancer biomarker prediction from whole slide images.
 
-
-
+Hackthon Project
+======
+* 10/2025: [AI-Assisted Clinical Data Navigation Platform](https://github.com/stjude-biohackathon/KIDS25-Team5) 
+  * Host:  St. Jude Children's Research Hospital 
+  * We built an LLM agentic chat interface that lets researchers explore the Childhood Cancer Survivor Study (CCSS) via 
+natural-language questions, automatically translating them to SQL and returning instant summary stats and visualizations 
+across 15k+ de-identified variables and two cohorts (survivors, siblings). Deployed a secure PostgreSQL backend with 
+controlled access, and wired it to LangChain agents, and Azure Cognitive Search to accelerate pre-proposal exploration 
+and variable discovery. 
 
 <!-- * Summer 2015: Research Assistant
   * GitHub University

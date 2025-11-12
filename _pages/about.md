@@ -31,9 +31,9 @@ Research Experience
 * **(Ongoing)** Accelerating Adaptive Algorithms At Scale through Reparameterization | The University of Chicago
   * Supervisor: [Prof. Rebecca Willett](https://willett.psd.uchicago.edu/)
 *  **(Ongoing)** Deep Assortment Optimization | The University of Texas at Austin
-  * Supervisor: [Prof. Rui Gao](https://rgao32.github.io/)
+   * Supervisor: [Prof. Rui Gao](https://rgao32.github.io/)
 *  **(Published)** [Analyst Reports and Stock Performance: Evidence From the Chinese Market](https://link.springer.com/article/10.1007/s10690-025-09522-w) | Beijing Normal – Hong Kong Baptist University
-  * Supervisor: [Dr. Yujia HU](https://staff.uic.edu.cn/yujiahu/en)
+   * Supervisor: [Dr. Yujia HU](https://staff.uic.edu.cn/yujiahu/en)
 
 
 

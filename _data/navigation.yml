@@ -19,6 +19,9 @@ main:
     
   - title: "Portfolio"
     url: /portfolio/
+
+  - title: "Hiking Journal"
+    url: /hiking-journal/
         
   # - title: "Blog Posts"
   #   url: /year-archive/

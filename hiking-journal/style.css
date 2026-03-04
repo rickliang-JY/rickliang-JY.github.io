@@ -1,0 +1,378 @@
+/* ================================================
+   Hiking Journal — Standalone Web Stylesheet
+   Ported from Obsidian plugin v6.0
+   ================================================ */
+
+/* === CSS Variables (replacing Obsidian theme vars) === */
+:root {
+  --text-normal: #1e293b;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --background-primary: #ffffff;
+  --background-secondary: #f8fafc;
+  --background-modifier-border: #e2e8f0;
+  --font-text: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-interface: var(--font-text);
+  --font-monospace: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  --accent-red: #dc2626;
+}
+
+/* === RESET === */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--text-normal); background: var(--background-primary); }
+
+/* === TRIP LIST VIEW === */
+.trip-list {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+  min-height: 100vh;
+}
+.trip-list-topbar {
+  margin-bottom: 2rem;
+}
+.trip-list-home {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.15s;
+}
+.trip-list-home:hover { color: var(--text-normal); }
+
+.trip-list-header h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.5rem;
+}
+.trip-list-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.trip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.trip-list-card {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: var(--background-primary);
+}
+.trip-list-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.trip-list-cover {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  background: var(--background-secondary);
+}
+.trip-list-cover-placeholder {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  opacity: 0.3;
+  background: var(--background-secondary);
+}
+.trip-list-info {
+  padding: 1rem;
+}
+.trip-list-info h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.trip-list-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0 0 6px;
+}
+.trip-list-stats {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.trip-list-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* === TRIP VIEW (Scrollytelling + SVG Topo Map) === */
+.hj-root {
+  height: 100vh;
+  height: 100dvh; /* iOS Safari dynamic viewport height */
+  overflow: hidden;
+  background: #fcfcfc;
+  font-family: var(--font-text);
+  color: var(--text-normal);
+  position: relative;
+  padding-top: env(safe-area-inset-top); /* notch devices */
+}
+.hj-wrapper { position: relative; height: 100%; width: 100%; }
+.hj-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 1rem; }
+
+/* Scroll panel */
+.hj-scroll {
+  position: absolute; inset: 0; width: 45%; min-width: 320px; height: 100%;
+  overflow-y: auto; scroll-behavior: smooth; padding-bottom: 50vh;
+  z-index: 10;
+  background: linear-gradient(to right, #fcfcfc 0%, rgba(252,252,252,0.95) 50%, transparent 100%);
+  -ms-overflow-style: none; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.hj-scroll::-webkit-scrollbar { display: none; }
+
+.hj-back-btn { padding: 12px 24px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
+.hj-back-btn:hover { color: var(--text-normal); }
+
+/* Header */
+.hj-header { padding: 2rem 3rem 0; margin-top: 2rem; }
+.hj-title { font-size: 2.5rem; font-weight: 300; letter-spacing: 0.02em; margin: 0 0 0.5rem; }
+.hj-subtitle { color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.02em; margin: 0; font-family: var(--font-monospace); text-transform: uppercase; }
+.hj-divider { width: 2rem; height: 2px; background: var(--accent-red); margin: 1.5rem 0 1rem; }
+.hj-stats { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted); }
+.hj-header-desc { color: var(--text-muted); font-size: 0.85rem; line-height: 1.8; max-width: 24rem; margin-top: 0.5rem; }
+
+/* Cards */
+.hj-card { width: 100%; min-height: 85vh; display: flex; flex-direction: column; justify-content: center; padding: 4rem 3rem; transition: opacity 0.5s ease, transform 0.5s ease; }
+.hj-card-active { opacity: 1; transform: scale(1); }
+.hj-card-dim { opacity: 0.5; transform: scale(0.97); }
+
+/* V5: compact cards */
+.hj-v5 .hj-card { min-height: 0; padding: 4px 3rem; justify-content: flex-start; }
+.hj-v5 .hj-card:first-of-type { padding-top: 1rem; }
+
+/* V5: section title dividers */
+.hj-section-divider { padding: 2rem 3rem 0.5rem; }
+.hj-section-divider-title { font-size: 1.3rem; font-weight: 600; color: var(--text-normal); margin: 0; border-bottom: 2px solid var(--background-modifier-border); padding-bottom: 0.5rem; }
+
+/* Image wraps — with Safari aspect-ratio fallback */
+.hj-img-wrap {
+  position: relative; width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden; border-radius: 4px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+  transition: transform 0.7s ease-out;
+}
+@supports not (aspect-ratio: 4/3) {
+  .hj-img-wrap { padding-bottom: 75%; height: 0; }
+}
+.hj-img-wrap:hover { transform: scale(1.02); }
+
+.hj-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.7s, filter 0.7s, transform 0.7s; }
+.hj-img-active { opacity: 1; filter: grayscale(0); transform: scale(1); }
+.hj-img-inactive { opacity: 0.4; filter: grayscale(1); transform: scale(1.05); }
+
+/* Extra photos (V5) */
+.hj-img-wrap.hj-img-extra {
+  aspect-ratio: 3/2;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+  margin-top: 4px;
+}
+@supports not (aspect-ratio: 3/2) {
+  .hj-img-wrap.hj-img-extra { padding-bottom: 66.67%; height: 0; }
+}
+
+/* GPX-only track marker cards (no photo) */
+.hj-track-marker {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 4px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.5rem; transition: all 0.7s ease-out;
+}
+@supports not (aspect-ratio: 16/9) {
+  .hj-track-marker { padding-bottom: 56.25%; height: 0; }
+}
+.hj-track-icon { font-size: 2rem; line-height: 1; }
+.hj-track-title { font-size: 1.4rem; font-weight: 600; color: #1e293b; letter-spacing: 0.05em; margin: 0; }
+.hj-track-coords { display: flex; gap: 1rem; font-size: 0.75rem; color: #94a3b8; font-family: var(--font-monospace); }
+.hj-marker-active { border-color: var(--accent-red); background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 50%, #f8fafc 100%); }
+.hj-marker-dim { opacity: 0.4; filter: grayscale(0.5); transform: scale(0.95); }
+
+/* Card info (V4 layout) */
+.hj-card-info { margin-top: 2rem; transition: transform 0.7s; }
+.hj-card-active .hj-card-info { transform: translateY(0); }
+.hj-card-dim .hj-card-info { transform: translateY(12px); }
+
+.hj-card-label { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.hj-dot-sm { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-red); flex-shrink: 0; }
+.hj-card-label .hj-card-name { color: var(--accent-red); font-family: var(--font-monospace); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.hj-card-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.75rem; letter-spacing: 0.03em; }
+.hj-card-desc { color: var(--text-muted); font-size: 0.85rem; line-height: 1.7; max-width: 28rem; }
+.hj-card-meta { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text-faint); font-family: var(--font-monospace); margin-top: 0.5rem; }
+
+/* Blog text */
+.hj-blog { margin-top: 1rem; padding: 1rem 0; border-top: 1px solid var(--background-modifier-border); max-width: 28rem; line-height: 1.8; font-size: 0.9rem; }
+.hj-blog blockquote { border-left: 3px solid var(--accent-red); padding-left: 1rem; margin: 1rem 0; color: var(--text-muted); font-style: italic; }
+.hj-blog p { margin: 0.5rem 0; }
+.hj-blog img { max-width: 100%; border-radius: 4px; }
+
+/* === MAP PANEL === */
+.hj-map {
+  position: absolute; inset: 0;
+  z-index: 0;
+  cursor: grab;
+}
+.hj-map:active { cursor: grabbing; }
+
+.hj-fullsvg {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* Map style switcher */
+.hj-map-switcher {
+  position: absolute; bottom: 16px; right: 16px; z-index: 12;
+}
+.hj-map-switcher-select {
+  padding: 5px 10px; font-size: 0.72rem; font-weight: 500;
+  border: 1px solid rgba(0,0,0,0.12); border-radius: 6px;
+  background: rgba(255,255,255,0.88);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #334155; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  outline: none; transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.hj-map-switcher-select:hover { border-color: rgba(0,0,0,0.25); }
+.hj-map-switcher-select:focus { border-color: #3b82f6; }
+
+/* Cone shadow layer */
+.hj-cone-layer {
+  position: absolute; inset: 0; z-index: 5;
+  pointer-events: none;
+  width: 100%; height: 100%;
+}
+
+/* === SVG elements === */
+.hj-hit { cursor: pointer; }
+.hj-noptr { pointer-events: none; }
+
+.hj-dot { transition: r 0.3s ease, fill 0.3s ease; }
+.hj-lbl {
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,0.8));
+  transition: font-size 0.3s, fill 0.3s, font-weight 0.3s;
+}
+
+/* Ping animation */
+.hj-ping { transition: opacity 0.3s; }
+.hj-ping-anim { animation: hj-ping-ring 1.5s cubic-bezier(0,0,0.2,1) infinite; }
+@keyframes hj-ping-ring { 0% { r: 16; opacity: 0.6; } 75%,100% { r: 30; opacity: 0; } }
+
+/* Transport icons */
+.hj-icon { transition: color 0.5s ease; }
+.hj-icon-gray { color: #9ca3af; }
+.hj-icon-white { color: #ffffff; }
+
+/* Info bubble */
+.hj-bubble-fo { overflow: visible; pointer-events: none; }
+.hj-bubble-inner {
+  background: rgba(255,255,255,0.95);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+  animation: hj-fadein 0.3s ease-out;
+}
+.hj-bubble-title { font-size: 10px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; border-bottom: 1px solid #f3f4f6; padding-bottom: 5px; margin: 0 0 6px; }
+.hj-bubble-row { display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin-bottom: 3px; }
+.hj-mono { font-family: var(--font-monospace); color: var(--text-normal); font-weight: 500; }
+.hj-bubble-caret { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 12px; height: 12px; background: rgba(255,255,255,0.95); border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; }
+@keyframes hj-fadein { 0%{opacity:0;transform:translateY(10px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+/* === DARK MODE === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-normal: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --background-primary: #1a1a2e;
+    --background-secondary: #0f172a;
+    --background-modifier-border: #334155;
+  }
+  body { background: #1a1a2e; }
+  .hj-root { background: #1a1a2e; }
+  .hj-scroll { background: linear-gradient(to right, #1a1a2e 0%, rgba(26,26,46,0.95) 50%, transparent 100%); }
+  .hj-lbl { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+  .hj-bubble-inner { background: rgba(30,30,50,0.95); border-color: #374151; }
+  .hj-bubble-title { color: #6b7280; border-color: #374151; }
+  .hj-bubble-caret { background: rgba(30,30,50,0.95); border-color: #374151; }
+  .hj-track-marker { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-color: rgba(255,255,255,0.06); }
+  .hj-track-title { color: #e2e8f0; }
+  .hj-marker-active { background: linear-gradient(135deg, #1c1917 0%, #1e293b 100%); border-color: var(--accent-red); }
+  .hj-map-switcher-select { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .trip-list-card { background: #0f172a; border-color: #334155; }
+  .trip-list-cover-placeholder { background: #1e293b; }
+}
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+  .hj-scroll {
+    width: 100%;
+    min-width: unset;
+    position: relative;
+    height: auto;
+    background: var(--background-primary);
+    padding-bottom: 30vh;
+  }
+  .hj-map {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40vh;
+    z-index: 0;
+  }
+  .hj-wrapper {
+    flex-direction: column;
+  }
+  .hj-root {
+    height: auto;
+    overflow: auto;
+  }
+  .hj-scroll {
+    margin-top: 40vh;
+    z-index: 10;
+  }
+  .hj-card {
+    padding: 2rem 1.5rem;
+  }
+  .hj-header {
+    padding: 1.5rem 1.5rem 0;
+  }
+  .hj-cone-layer {
+    display: none;
+  }
+  .trip-grid {
+    grid-template-columns: 1fr;
+  }
+}

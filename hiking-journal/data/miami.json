@@ -1,0 +1,250 @@
+{
+  "version": 5,
+  "name": "Miami",
+  "description": "Exploring the vibrant streets and beaches of Miami, from South Beach to the Art Deco District.",
+  "region": "Miami, FL",
+  "date": "2026-03-04",
+  "mapStyle": "esri-satellite",
+  "stats": {
+    "distanceKm": 6.3,
+    "elevationGainM": 77,
+    "elevationLossM": 76
+  },
+  "gpxTrack": [
+    {"lat":25.770423,"lng":-80.191108,"ele":17.25},
+    {"lat":25.770324,"lng":-80.188802,"ele":4.25},
+    {"lat":25.771639,"lng":-80.185036,"ele":4.25},
+    {"lat":25.772835,"lng":-80.185043,"ele":10.25},
+    {"lat":25.773358,"lng":-80.185302,"ele":11.5},
+    {"lat":25.774108,"lng":-80.185337,"ele":12.5},
+    {"lat":25.774594,"lng":-80.185175,"ele":11.5},
+    {"lat":25.776071,"lng":-80.184833,"ele":11.25},
+    {"lat":25.776583,"lng":-80.184504,"ele":11.25},
+    {"lat":25.777029,"lng":-80.184251,"ele":9.25},
+    {"lat":25.776583,"lng":-80.184504,"ele":11},
+    {"lat":25.776071,"lng":-80.184833,"ele":10.5},
+    {"lat":25.776116,"lng":-80.18538,"ele":11.25},
+    {"lat":25.775631,"lng":-80.186568,"ele":12.75},
+    {"lat":25.775356,"lng":-80.186876,"ele":15},
+    {"lat":25.777113,"lng":-80.187682,"ele":14},
+    {"lat":25.777342,"lng":-80.187354,"ele":12.5},
+    {"lat":25.77722,"lng":-80.186951,"ele":13.25},
+    {"lat":25.777653,"lng":-80.186529,"ele":12.75},
+    {"lat":25.778229,"lng":-80.186661,"ele":10.25},
+    {"lat":25.77977,"lng":-80.186702,"ele":11},
+    {"lat":25.779873,"lng":-80.187754,"ele":11.5},
+    {"lat":25.77957,"lng":-80.188491,"ele":11.5},
+    {"lat":25.779807,"lng":-80.188488,"ele":11.75},
+    {"lat":25.779921,"lng":-80.188672,"ele":11.75},
+    {"lat":25.780284,"lng":-80.188797,"ele":12.5},
+    {"lat":25.781867,"lng":-80.189193,"ele":11.25},
+    {"lat":25.782173,"lng":-80.189213,"ele":10.5},
+    {"lat":25.783067,"lng":-80.188951,"ele":9.5},
+    {"lat":25.783211,"lng":-80.185358,"ele":0},
+    {"lat":25.783883,"lng":-80.18564,"ele":0},
+    {"lat":25.784925,"lng":-80.185382,"ele":7.75},
+    {"lat":25.785051,"lng":-80.185687,"ele":0},
+    {"lat":25.78576,"lng":-80.185441,"ele":5.5},
+    {"lat":25.786084,"lng":-80.185572,"ele":6},
+    {"lat":25.785923,"lng":-80.185572,"ele":5.75},
+    {"lat":25.785684,"lng":-80.18575,"ele":7},
+    {"lat":25.785337,"lng":-80.186719,"ele":8.25},
+    {"lat":25.784735,"lng":-80.188075,"ele":9.5},
+    {"lat":25.784844,"lng":-80.188745,"ele":9.25},
+    {"lat":25.785405,"lng":-80.188996,"ele":9},
+    {"lat":25.785548,"lng":-80.188957,"ele":9.25},
+    {"lat":25.785031,"lng":-80.189154,"ele":9},
+    {"lat":25.784987,"lng":-80.189486,"ele":9.5},
+    {"lat":25.784958,"lng":-80.189666,"ele":10},
+    {"lat":25.784914,"lng":-80.1905,"ele":11.5},
+    {"lat":25.784851,"lng":-80.190568,"ele":11.5},
+    {"lat":25.783935,"lng":-80.190525,"ele":7.75},
+    {"lat":25.782992,"lng":-80.190486,"ele":9},
+    {"lat":25.782039,"lng":-80.190459,"ele":10},
+    {"lat":25.781402,"lng":-80.190436,"ele":10},
+    {"lat":25.780953,"lng":-80.19042,"ele":10.25},
+    {"lat":25.780101,"lng":-80.19038,"ele":16.75},
+    {"lat":25.779381,"lng":-80.190358,"ele":18.5},
+    {"lat":25.779226,"lng":-80.190377,"ele":18.75},
+    {"lat":25.779171,"lng":-80.190434,"ele":19},
+    {"lat":25.779122,"lng":-80.191313,"ele":19.75},
+    {"lat":25.779101,"lng":-80.192035,"ele":19.5},
+    {"lat":25.779095,"lng":-80.192005,"ele":19.5},
+    {"lat":25.778926,"lng":-80.192017,"ele":20.75},
+    {"lat":25.777857,"lng":-80.191932,"ele":18},
+    {"lat":25.777172,"lng":-80.191922,"ele":13.25},
+    {"lat":25.777013,"lng":-80.191963,"ele":13},
+    {"lat":25.776089,"lng":-80.191924,"ele":18},
+    {"lat":25.775246,"lng":-80.191889,"ele":18.75},
+    {"lat":25.775068,"lng":-80.191901,"ele":18.25},
+    {"lat":25.774206,"lng":-80.191913,"ele":18.5},
+    {"lat":25.773443,"lng":-80.191813,"ele":18.5},
+    {"lat":25.773357,"lng":-80.191893,"ele":18.5}
+  ],
+  "waypoints": [
+    {
+      "id": "loc-1",
+      "title": "Location 1",
+      "sectionTitle": "Section 1",
+      "lat": 25.770552,
+      "lng": -80.188093,
+      "alt": null,
+      "blog": "ashdioashdiqjndjkahiodcajslkdnmlasniofqiphnalksnxcaklsndklasjd",
+      "photos": [
+        {"id": "photo-1", "imageUrl": "/images/hiking-journal/miami/IMG20250715154444-dda693d0ec99.jpg", "title": "IMG20250715154444 dda693d0ec99"}
+      ]
+    },
+    {
+      "id": "loc-2",
+      "title": "Location 2",
+      "sectionTitle": "Section 1",
+      "lat": 25.770896,
+      "lng": -80.187471,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-2", "imageUrl": "/images/hiking-journal/miami/1752617239823.jpg", "title": "Photo 2"}
+      ]
+    },
+    {
+      "id": "loc-3",
+      "title": "Location 3",
+      "sectionTitle": "Section 1",
+      "lat": 25.771711,
+      "lng": -80.185049,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-3", "imageUrl": "/images/hiking-journal/miami/IMG_20250715_181633.jpg", "title": "IMG 20250715 181633"}
+      ]
+    },
+    {
+      "id": "loc-4",
+      "title": "Location 4",
+      "sectionTitle": "Section 1",
+      "lat": 25.772813,
+      "lng": -80.18507,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-4", "imageUrl": "/images/hiking-journal/miami/1752633500592.jpg", "title": "Photo 4"},
+        {"id": "photo-5", "imageUrl": "/images/hiking-journal/miami/1752633514823.jpg", "title": "Photo 5"}
+      ]
+    },
+    {
+      "id": "loc-5",
+      "title": "Location 5",
+      "sectionTitle": "Section 1",
+      "lat": 25.77652,
+      "lng": -80.18465,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-6", "imageUrl": "/images/hiking-journal/miami/1752617141763.jpg", "title": "Photo 6"},
+        {"id": "photo-7", "imageUrl": "/images/hiking-journal/miami/1752617181650.jpg", "title": "Photo 7"},
+        {"id": "photo-8", "imageUrl": "/images/hiking-journal/miami/1752617191808.jpg", "title": "Photo 8"}
+      ]
+    },
+    {
+      "id": "loc-6",
+      "title": "Location 6",
+      "sectionTitle": "Section 1",
+      "lat": 25.777023,
+      "lng": -80.184264,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-9", "imageUrl": "/images/hiking-journal/miami/1752617229459.jpg", "title": "Photo 9"},
+        {"id": "photo-10", "imageUrl": "/images/hiking-journal/miami/1752716741805.jpg", "title": "Photo 10"}
+      ]
+    },
+    {
+      "id": "loc-7",
+      "title": "Location 7",
+      "sectionTitle": "Section 1",
+      "lat": 25.780737,
+      "lng": -80.188607,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-11", "imageUrl": "/images/hiking-journal/miami/1752633500592.jpg", "title": "Photo 11"}
+      ]
+    },
+    {
+      "id": "loc-8",
+      "title": "Location 8",
+      "sectionTitle": "Section 1",
+      "lat": 25.785751,
+      "lng": -80.185432,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-12", "imageUrl": "/images/hiking-journal/miami/IMG_20250715_181633.jpg", "title": "IMG 20250715 181633"},
+        {"id": "photo-13", "imageUrl": "/images/hiking-journal/miami/IMG_20250716_150117.jpg", "title": "IMG 20250716 150117"},
+        {"id": "photo-14", "imageUrl": "/images/hiking-journal/miami/IMG20250715154444.jpg", "title": "Photo 14"}
+      ]
+    },
+    {
+      "id": "loc-9",
+      "title": "Location 9",
+      "sectionTitle": "Section 1",
+      "lat": 25.78678,
+      "lng": -80.185556,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-15", "imageUrl": "/images/hiking-journal/miami/IMG20250715163830.jpg", "title": "Photo 15"},
+        {"id": "photo-16", "imageUrl": "/images/hiking-journal/miami/IMG20250715173655.jpg", "title": "Photo 16"}
+      ]
+    },
+    {
+      "id": "loc-10",
+      "title": "Location 10",
+      "sectionTitle": "Section 1",
+      "lat": 25.785602,
+      "lng": -80.188941,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-17", "imageUrl": "/images/hiking-journal/miami/1752633514823.jpg", "title": "Photo 17"}
+      ]
+    },
+    {
+      "id": "loc-11",
+      "title": "Location 11",
+      "sectionTitle": "Section 2",
+      "lat": 25.781481,
+      "lng": -80.190443,
+      "alt": null,
+      "blog": "ahsdoajskdjkasjdklajsklasdasdasdasdasdasdasdasdasdasdasdaasdasdasdaasdddddddddddddddddasdasdasdsasadasdasdasdasdasdasda",
+      "photos": [
+        {"id": "photo-20", "imageUrl": "/images/hiking-journal/miami/1752617191808.jpg", "title": "Photo 20"}
+      ]
+    },
+    {
+      "id": "loc-12",
+      "title": "Location 12",
+      "sectionTitle": "Section 2",
+      "lat": 25.77909,
+      "lng": -80.192153,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-18", "imageUrl": "/images/hiking-journal/miami/1752617239823.jpg", "title": "Photo 18"},
+        {"id": "photo-19", "imageUrl": "/images/hiking-journal/miami/1752716741805.jpg", "title": "Photo 19"}
+      ]
+    },
+    {
+      "id": "loc-13",
+      "title": "Location 13",
+      "sectionTitle": "Section 2",
+      "lat": 25.777873,
+      "lng": -80.191929,
+      "alt": null,
+      "blog": "",
+      "photos": [
+        {"id": "photo-21", "imageUrl": "/images/hiking-journal/miami/IMG_20250715_181633.jpg", "title": "IMG 20250715 181633"}
+      ]
+    }
+  ]
+}

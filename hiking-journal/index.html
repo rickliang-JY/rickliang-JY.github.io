@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Hiking Journal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- TRIP LIST VIEW -->
+  <div id="trip-list" class="trip-list">
+    <nav class="trip-list-topbar">
+      <a href="/" class="trip-list-home">&larr; Back to main site</a>
+    </nav>
+    <div class="trip-list-header">
+      <h1>Hiking Journal</h1>
+      <p class="trip-list-subtitle">Scroll-synced map stories from the trail</p>
+    </div>
+    <div id="trip-grid" class="trip-grid">
+      <!-- Populated by app.js -->
+    </div>
+  </div>
+
+  <!-- TRIP VIEW (hidden initially) -->
+  <div id="trip-view" class="hj-root hj-v5" style="display:none"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

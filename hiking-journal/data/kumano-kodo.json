@@ -1,0 +1,87 @@
+{
+  "version": 5,
+  "name": "Kumano Kodo Pilgrimage",
+  "description": "Walking the ancient pilgrimage trails of the Kii Peninsula, following footsteps of emperors and monks through misty mountain forests.",
+  "region": "Kii Peninsula, Japan",
+  "date": "2024-04-15",
+  "mapStyle": "opentopomap",
+  "stats": {
+    "distanceKm": 12.5,
+    "elevationGainM": 680,
+    "elevationLossM": 520
+  },
+  "gpxTrack": [
+    {"lat": 33.8416, "lng": 135.7727, "ele": 85},
+    {"lat": 33.8430, "lng": 135.7750, "ele": 110},
+    {"lat": 33.8455, "lng": 135.7780, "ele": 165},
+    {"lat": 33.8480, "lng": 135.7810, "ele": 230},
+    {"lat": 33.8510, "lng": 135.7835, "ele": 310},
+    {"lat": 33.8540, "lng": 135.7860, "ele": 380},
+    {"lat": 33.8565, "lng": 135.7890, "ele": 420},
+    {"lat": 33.8590, "lng": 135.7920, "ele": 460},
+    {"lat": 33.8620, "lng": 135.7945, "ele": 490},
+    {"lat": 33.8650, "lng": 135.7970, "ele": 510},
+    {"lat": 33.8675, "lng": 135.8000, "ele": 480},
+    {"lat": 33.8700, "lng": 135.8030, "ele": 440},
+    {"lat": 33.8725, "lng": 135.8055, "ele": 390},
+    {"lat": 33.8750, "lng": 135.8080, "ele": 350},
+    {"lat": 33.8775, "lng": 135.8110, "ele": 310},
+    {"lat": 33.8800, "lng": 135.8140, "ele": 280},
+    {"lat": 33.8820, "lng": 135.8170, "ele": 250},
+    {"lat": 33.8845, "lng": 135.8195, "ele": 220},
+    {"lat": 33.8870, "lng": 135.8220, "ele": 190},
+    {"lat": 33.8890, "lng": 135.8250, "ele": 160}
+  ],
+  "waypoints": [
+    {
+      "id": "loc-1",
+      "title": "Takijiri-oji",
+      "sectionTitle": "Morning: Into the Mountains",
+      "lat": 33.8416,
+      "lng": 135.7727,
+      "alt": 85,
+      "blog": "The sacred entrance to the Kumano Kodo. A tall torii gate marks the beginning of the trail, standing guard over centuries of pilgrimage.",
+      "photos": []
+    },
+    {
+      "id": "loc-2",
+      "title": "Mountain Forest",
+      "sectionTitle": "Morning: Into the Mountains",
+      "lat": 33.8510,
+      "lng": 135.7835,
+      "alt": 310,
+      "blog": "Ancient cedar trees tower overhead, their trunks wrapped in moss. The trail winds upward through a cathedral of green.",
+      "photos": []
+    },
+    {
+      "id": "loc-3",
+      "title": "Takahara Village",
+      "sectionTitle": "Midday: The Village in the Clouds",
+      "lat": 33.8650,
+      "lng": 135.7970,
+      "alt": 510,
+      "blog": "Known as the *village in the mist*, Takahara sits perched on a ridge with sweeping views of the valley below. We stopped for onigiri and green tea at a small rest house.",
+      "photos": []
+    },
+    {
+      "id": "loc-4",
+      "title": "Descent Trail",
+      "sectionTitle": "Afternoon: The Descent",
+      "lat": 33.8775,
+      "lng": 135.8110,
+      "alt": 310,
+      "blog": "The afternoon descent passes through bamboo groves and across small wooden bridges. Every turn reveals another view of the misty mountains.",
+      "photos": []
+    },
+    {
+      "id": "loc-5",
+      "title": "Chikatsuyu",
+      "sectionTitle": "Afternoon: The Descent",
+      "lat": 33.8890,
+      "lng": 135.8250,
+      "alt": 160,
+      "blog": "The trail ends in the small village of Chikatsuyu, where we soaked in a riverside onsen as the sun set behind the mountains.",
+      "photos": []
+    }
+  ]
+}

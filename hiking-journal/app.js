@@ -77,24 +77,33 @@ function lat2t(lat, z) {
   return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * (1 << z);
 }
 
-function autoZoom(latSpan, lngSpan) {
+function autoZoom(latSpan, lngSpan, minZ, maxZ) {
+  const lo = minZ || 11, hi = maxZ || 15;
   const narrow = Math.min(latSpan, lngSpan);
   let z;
-  if (narrow > 0.4) z = 11;
+  if (narrow > 100) z = 2;
+  else if (narrow > 50) z = 3;
+  else if (narrow > 25) z = 4;
+  else if (narrow > 10) z = 5;
+  else if (narrow > 5) z = 6;
+  else if (narrow > 2) z = 7;
+  else if (narrow > 1) z = 8;
+  else if (narrow > 0.4) z = 11;
   else if (narrow > 0.2) z = 12;
   else if (narrow > 0.1) z = 13;
   else if (narrow > 0.04) z = 14;
   else z = 15;
+  z = Math.max(lo, Math.min(hi, z));
   const wide = Math.max(latSpan, lngSpan);
-  if (wide > 1 && z > 11) z = 11;
-  else if (wide > 0.5 && z > 12) z = 12;
+  if (wide > 1 && z > 11) z = Math.max(lo, 11);
+  else if (wide > 0.5 && z > 12) z = Math.max(lo, 12);
   return z;
 }
 
-function buildGeo(bounds) {
+function buildGeo(bounds, zoomOverride) {
   const latSpan = bounds.north - bounds.south;
   const lngSpan = bounds.east - bounds.west;
-  const zoom = autoZoom(latSpan, lngSpan);
+  const zoom = zoomOverride || autoZoom(latSpan, lngSpan);
   const pad = 0.15;
   const rMinTX = lon2t(bounds.west - lngSpan * pad, zoom);
   const rMaxTX = lon2t(bounds.east + lngSpan * pad, zoom);
@@ -306,7 +315,7 @@ class HikingJournalViewer {
     const wrap = createDiv(c, { cls: "hj-wrapper" });
     this.scrollEl = createDiv(wrap, { cls: "hj-scroll" });
 
-    const backBtn = createDiv(this.scrollEl, { text: "\u2190 Back to Library", cls: "hj-back-btn" });
+    const backBtn = createDiv(this.scrollEl, { text: "\u2190 Back to Map", cls: "hj-back-btn" });
     backBtn.addEventListener("click", () => backToList());
 
     this.mkHeader(this.scrollEl, trip);
@@ -1024,8 +1033,340 @@ class HikingJournalViewer {
   }
 }
 
-// === Trip List Logic ===
+// === Global Map Viewer ===
+class GlobalMapViewer {
+  constructor(svg) {
+    this.svg = svg;
+    this.trips = [];
+    this.geo = null;
+    this.mGrp = null;
+    this.tileGroup = null;
+    this.tilePool = [];
+    this.markerGroup = null;
+    this.cx = 0;
+    this.cy = 0;
+    this.userScale = 1;
+    this.userOffX = 0;
+    this.userOffY = 0;
+    this.userPanning = false;
+    this._dragState = null;
+    this._panTimer = null;
+    this._cleanupListeners = null;
+    this._lastTileCx = -9999;
+    this._lastTileCy = -9999;
+    this.raf = 0;
+    this.mapStyle = "carto-voyager";
+  }
+
+  loadTrips(trips) {
+    this.trips = trips;
+    this.build();
+  }
+
+  destroy() {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    if (this._cleanupListeners) this._cleanupListeners();
+    if (this._panTimer) clearTimeout(this._panTimer);
+    this.tilePool = [];
+    this.svg.innerHTML = "";
+  }
+
+  build() {
+    this.svg.innerHTML = "";
+    const trips = this.trips;
+    if (!trips.length) return;
+
+    // Calculate bounds across all trips
+    const lats = trips.map(t => t.lat);
+    const lngs = trips.map(t => t.lng);
+    const pad = 2; // generous padding for global view
+    const bounds = {
+      north: Math.max(...lats) + pad,
+      south: Math.min(...lats) - pad,
+      east: Math.max(...lngs) + pad,
+      west: Math.min(...lngs) - pad
+    };
+
+    const latSpan = bounds.north - bounds.south;
+    const lngSpan = bounds.east - bounds.west;
+    const zoom = autoZoom(latSpan, lngSpan, 2, 10);
+    this.geo = buildGeo(bounds, zoom);
+
+    // Set viewBox
+    this.svg.setAttribute("viewBox", `0 0 ${this.geo.w} ${this.geo.h}`);
+    this.svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+
+    // Defs
+    const defs = S("defs", {}, this.svg);
+    const gf = S("filter", { id: "gm-glow", x: "-30%", y: "-30%", width: "160%", height: "160%" }, defs);
+    S("feGaussianBlur", { stdDeviation: "4", result: "b" }, gf);
+    S("feComposite", { in: "SourceGraphic", in2: "b", operator: "over" }, gf);
+
+    // Main transform group
+    this.mGrp = S("g", {}, this.svg);
+
+    // Tile layer
+    const ms = MAP_STYLES[this.mapStyle];
+    this.tileGroup = S("g", { style: `filter:${ms.filter};` }, this.mGrp);
+    this.tilePool = [];
+    for (let i = 0; i < POOL; i++) {
+      const img = S("image", {
+        width: `${TILE + 0.5}`,
+        height: `${TILE + 0.5}`,
+        preserveAspectRatio: "none",
+        style: "display:none"
+      }, this.tileGroup);
+      this.tilePool.push(img);
+    }
+
+    // Marker group (on top of tiles)
+    this.markerGroup = S("g", {}, this.mGrp);
+    this.createMarkers();
+
+    // Center the map on the midpoint
+    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+    const midLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
+    const mid = proj(midLat, midLng, this.geo);
+    this.cx = this.geo.w / 2 - mid.x;
+    this.cy = this.geo.h / 2 - mid.y;
+
+    this.setupInteraction();
+    this.syncTiles();
+    this.startLoop();
+  }
+
+  createMarkers() {
+    for (const trip of this.trips) {
+      const p = proj(trip.lat, trip.lng, this.geo);
+      const g = S("g", { transform: `translate(${p.x},${p.y})`, class: "global-marker" }, this.markerGroup);
+
+      // Ping ring
+      S("circle", { r: "20", class: "global-marker-ping" }, g);
+
+      // Outer glow circle
+      S("circle", { r: "14", fill: "rgba(220,38,38,0.15)", class: "global-marker-glow" }, g);
+
+      // Main dot
+      S("circle", { r: "8", class: "global-marker-dot" }, g);
+
+      // Inner dot
+      S("circle", { r: "3", fill: "white", opacity: "0.9" }, g);
+
+      // Label background
+      const name = trip.name;
+      const labelY = -22;
+      const bgW = Math.max(60, name.length * 7 + 16);
+      S("rect", {
+        x: `${-bgW / 2}`, y: `${labelY - 12}`, width: `${bgW}`, height: "20", rx: "4",
+        fill: "rgba(255,255,255,0.9)", stroke: "rgba(0,0,0,0.08)", "stroke-width": "0.5",
+        class: "global-marker-label-bg"
+      }, g);
+
+      // Trip name
+      const lbl = S("text", {
+        x: "0", y: `${labelY}`,
+        class: "global-marker-label"
+      }, g);
+      lbl.textContent = name;
+
+      // Region subtitle
+      if (trip.region) {
+        const sub = S("text", {
+          x: "0", y: `${labelY + 12}`,
+          class: "global-marker-region"
+        }, g);
+        sub.textContent = trip.region;
+      }
+
+      // Click handler
+      g.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openTrip(trip.file);
+      });
+    }
+  }
+
+  setupInteraction() {
+    const svg = this.svg;
+    svg.style.cursor = "grab";
+
+    // Mouse drag
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      this._dragState = { x: e.clientX, y: e.clientY };
+      this.userPanning = true;
+      svg.style.cursor = "grabbing";
+      if (this._panTimer) clearTimeout(this._panTimer);
+    };
+
+    const onMouseMove = (e) => {
+      if (!this._dragState) return;
+      const sr = svg.getBoundingClientRect();
+      const vbW = this.geo.w / this.userScale;
+      const sc = Math.max(sr.width / vbW, sr.height / (this.geo.h / this.userScale));
+      const dx = (e.clientX - this._dragState.x) / sc;
+      const dy = (e.clientY - this._dragState.y) / sc;
+      this.cx += dx;
+      this.cy += dy;
+      this._dragState.x = e.clientX;
+      this._dragState.y = e.clientY;
+    };
+
+    const onMouseUp = () => {
+      if (!this._dragState) return;
+      this._dragState = null;
+      svg.style.cursor = "grab";
+      this._panTimer = setTimeout(() => { this.userPanning = false; }, 3000);
+    };
+
+    svg.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    // Wheel zoom
+    svg.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      this.userScale = Math.max(0.3, Math.min(8, this.userScale * factor));
+      this.updateViewBox();
+      this._lastTileCx = -9999;
+      this._lastTileCy = -9999;
+    }, { passive: false });
+
+    // Double-click reset
+    svg.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      this.userScale = 1;
+      const lats = this.trips.map(t => t.lat);
+      const lngs = this.trips.map(t => t.lng);
+      const mid = proj((Math.max(...lats) + Math.min(...lats)) / 2, (Math.max(...lngs) + Math.min(...lngs)) / 2, this.geo);
+      this.cx = this.geo.w / 2 - mid.x;
+      this.cy = this.geo.h / 2 - mid.y;
+      this.updateViewBox();
+      this._lastTileCx = -9999;
+    });
+
+    // Touch support
+    let lastTouchDist = 0;
+    svg.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastTouchDist = Math.hypot(dx, dy);
+      } else if (e.touches.length === 1) {
+        this._dragState = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        this.userPanning = true;
+        if (this._panTimer) clearTimeout(this._panTimer);
+      }
+    }, { passive: true });
+
+    svg.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        if (lastTouchDist > 0) {
+          const factor = dist / lastTouchDist;
+          this.userScale = Math.max(0.3, Math.min(8, this.userScale * factor));
+          this.updateViewBox();
+          this._lastTileCx = -9999;
+        }
+        lastTouchDist = dist;
+      } else if (e.touches.length === 1 && this._dragState) {
+        const sr = svg.getBoundingClientRect();
+        const vbW = this.geo.w / this.userScale;
+        const sc = Math.max(sr.width / vbW, sr.height / (this.geo.h / this.userScale));
+        this.cx += (e.touches[0].clientX - this._dragState.x) / sc;
+        this.cy += (e.touches[0].clientY - this._dragState.y) / sc;
+        this._dragState.x = e.touches[0].clientX;
+        this._dragState.y = e.touches[0].clientY;
+      }
+    }, { passive: false });
+
+    svg.addEventListener("touchend", () => {
+      lastTouchDist = 0;
+      this._dragState = null;
+      this._panTimer = setTimeout(() => { this.userPanning = false; }, 3000);
+    }, { passive: true });
+
+    this._cleanupListeners = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }
+
+  updateViewBox() {
+    const s = this.userScale;
+    const vbW = this.geo.w / s;
+    const vbH = this.geo.h / s;
+    const vbX = (this.geo.w - vbW) / 2;
+    const vbY = (this.geo.h - vbH) / 2;
+    this.svg.setAttribute("viewBox", `${vbX} ${vbY} ${vbW} ${vbH}`);
+  }
+
+  syncTiles() {
+    const sr = this.svg.getBoundingClientRect();
+    if (!sr.width || !sr.height) return;
+    const s = this.userScale || 1;
+    const vbW = this.geo.w / s, vbH = this.geo.h / s;
+    const vbX = (this.geo.w - vbW) / 2;
+    const vbY = (this.geo.h - vbH) / 2;
+    const scale = Math.max(sr.width / vbW, sr.height / vbH);
+    const vw = sr.width / scale, vh = sr.height / scale;
+    const mapCX = (vbX + vbW / 2) - this.cx;
+    const mapCY = (vbY + vbH / 2) - this.cy;
+    const buf = 2;
+    const xMin = Math.floor(this.geo.minTX + (mapCX - vw / 2) / TILE) - buf;
+    const xMax = Math.floor(this.geo.minTX + (mapCX + vw / 2) / TILE) + buf;
+    const yMin = Math.floor(this.geo.minTY + (mapCY - vh / 2) / TILE) - buf;
+    const yMax = Math.floor(this.geo.minTY + (mapCY + vh / 2) / TILE) + buf;
+    const ms = MAP_STYLES[this.mapStyle];
+    const srv = ms.subs;
+    let idx = 0;
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        if (idx >= this.tilePool.length) break;
+        if (y < 0 || y >= (1 << this.geo.zoom)) continue;
+        const wx = ((x % (1 << this.geo.zoom)) + (1 << this.geo.zoom)) % (1 << this.geo.zoom);
+        const node = this.tilePool[idx];
+        let url = ms.url.replace("{z}", this.geo.zoom).replace("{x}", wx).replace("{y}", y);
+        if (srv.length > 0) url = url.replace("{s}", srv[Math.abs(x + y) % srv.length]);
+        if (node.getAttribute("href") !== url) {
+          node.setAttribute("href", url);
+          node.setAttribute("x", `${(x - this.geo.minTX) * TILE}`);
+          node.setAttribute("y", `${(y - this.geo.minTY) * TILE}`);
+        }
+        if (node.style.display === "none") node.style.display = "";
+        idx++;
+      }
+    }
+    while (idx < this.tilePool.length) {
+      if (this.tilePool[idx].style.display !== "none") this.tilePool[idx].style.display = "none";
+      idx++;
+    }
+  }
+
+  startLoop() {
+    const loop = () => {
+      if (this.mGrp) this.mGrp.setAttribute("transform", `translate(${this.cx},${this.cy})`);
+      if (Math.abs(this.cx - this._lastTileCx) > TILE / 2 || Math.abs(this.cy - this._lastTileCy) > TILE / 2) {
+        this.syncTiles();
+        this._lastTileCx = this.cx;
+        this._lastTileCy = this.cy;
+      }
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  }
+}
+
+// === App State & Navigation ===
 let viewer = null;
+let globalMap = null;
+let tripsData = null;
 
 async function loadTripIndex() {
   const resp = await fetch("data/trips.json");
@@ -1037,40 +1378,21 @@ async function loadTripData(filename) {
   return resp.json();
 }
 
-function renderTripList(trips) {
-  const grid = document.getElementById("trip-grid");
-  grid.innerHTML = "";
-  for (const trip of trips) {
-    const card = createDiv(grid, { cls: "trip-list-card" });
-    if (trip.coverImage) {
-      const img = createEl(card, "img", { cls: "trip-list-cover" });
-      img.src = trip.coverImage;
-      img.alt = trip.name;
-      img.loading = "lazy";
-    } else {
-      createDiv(card, { text: "\u{1F3D4}", cls: "trip-list-cover-placeholder" });
-    }
-    const info = createDiv(card, { cls: "trip-list-info" });
-    createEl(info, "h2", { text: trip.name });
-    const meta = [];
-    if (trip.region) meta.push(trip.region);
-    if (trip.date) meta.push(trip.date);
-    if (meta.length) createEl(info, "p", { text: meta.join(" \u00B7 "), cls: "trip-list-meta" });
-    if (trip.stats) {
-      const statsEl = createDiv(info, { cls: "trip-list-stats" });
-      if (trip.stats.distanceKm) createEl(statsEl, "span", { text: `${trip.stats.distanceKm} km` });
-      if (trip.stats.elevationGainM) createEl(statsEl, "span", { text: `\u2191${trip.stats.elevationGainM}m` });
-    }
-    if (trip.description) createEl(info, "p", { text: trip.description, cls: "trip-list-desc" });
-    card.addEventListener("click", () => openTrip(trip.file));
-  }
+function showGlobalMap() {
+  document.getElementById("global-map").style.display = "";
+  document.getElementById("trip-view").style.display = "none";
+  if (globalMap) globalMap.destroy();
+  const svg = document.getElementById("global-svg");
+  globalMap = new GlobalMapViewer(svg);
+  globalMap.loadTrips(tripsData);
 }
 
 async function openTrip(filename) {
-  const data = await loadTripData(filename);
-  document.getElementById("trip-list").style.display = "none";
+  if (globalMap) { globalMap.destroy(); globalMap = null; }
+  document.getElementById("global-map").style.display = "none";
   const container = document.getElementById("trip-view");
   container.style.display = "";
+  const data = await loadTripData(filename);
   container.className = `hj-root${(data.version || 5) >= 5 ? " hj-v5" : ""}`;
   if (viewer) viewer.destroy();
   viewer = new HikingJournalViewer(container);
@@ -1080,16 +1402,15 @@ async function openTrip(filename) {
 function backToList() {
   if (viewer) { viewer.destroy(); viewer = null; }
   document.getElementById("trip-view").style.display = "none";
-  document.getElementById("trip-list").style.display = "";
+  showGlobalMap();
 }
 
 // === Init ===
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const trips = await loadTripIndex();
-    renderTripList(trips);
+    tripsData = await loadTripIndex();
+    showGlobalMap();
   } catch (err) {
     console.error("Failed to load trip index:", err);
-    document.getElementById("trip-grid").innerHTML = '<p style="color:#94a3b8;text-align:center;padding:3rem">No trips found. Add trip data to <code>data/trips.json</code>.</p>';
   }
 });

@@ -9,18 +9,13 @@
 </head>
 <body>
 
-  <!-- TRIP LIST VIEW -->
-  <div id="trip-list" class="trip-list">
-    <nav class="trip-list-topbar">
-      <a href="/" class="trip-list-home">&larr; Back to main site</a>
-    </nav>
-    <div class="trip-list-header">
-      <h1>Hiking Journal</h1>
-      <p class="trip-list-subtitle">Scroll-synced map stories from the trail</p>
+  <!-- GLOBAL MAP VIEW -->
+  <div id="global-map" class="global-map">
+    <div class="global-map-topbar">
+      <a href="/" class="global-map-home">&larr; Back to main site</a>
+      <span class="global-map-title">Hiking Journal</span>
     </div>
-    <div id="trip-grid" class="trip-grid">
-      <!-- Populated by app.js -->
-    </div>
+    <svg id="global-svg" class="global-svg"></svg>
   </div>
 
   <!-- TRIP VIEW (hidden initially) -->

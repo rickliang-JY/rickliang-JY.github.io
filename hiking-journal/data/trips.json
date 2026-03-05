@@ -6,6 +6,8 @@
     "description": "Walking the ancient pilgrimage trails",
     "coverImage": null,
     "file": "kumano-kodo.json",
+    "lat": 33.865,
+    "lng": 135.81,
     "stats": {
       "distanceKm": 12.5,
       "elevationGainM": 680
@@ -18,6 +20,8 @@
     "description": "Exploring the vibrant streets and beaches of Miami",
     "coverImage": "/images/hiking-journal/miami/IMG20250715154444-dda693d0ec99.jpg",
     "file": "miami.json",
+    "lat": 25.778,
+    "lng": -80.189,
     "stats": {
       "distanceKm": 6.3,
       "elevationGainM": 77

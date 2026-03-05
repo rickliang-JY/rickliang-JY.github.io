@@ -1077,25 +1077,41 @@ class GlobalMapViewer {
     const trips = this.trips;
     if (!trips.length) return;
 
-    // Calculate bounds across all trips
+    // Get SVG element's actual pixel dimensions
+    const rect = this.svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
     const lats = trips.map(t => t.lat);
     const lngs = trips.map(t => t.lng);
-    const pad = 2; // generous padding for global view
-    const bounds = {
-      north: Math.max(...lats) + pad,
-      south: Math.min(...lats) - pad,
-      east: Math.max(...lngs) + pad,
-      west: Math.min(...lngs) - pad
-    };
+    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+    const midLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
+    const latSpan = Math.max(...lats) - Math.min(...lats);
+    const lngSpan = Math.max(...lngs) - Math.min(...lngs);
 
-    const latSpan = bounds.north - bounds.south;
-    const lngSpan = bounds.east - bounds.west;
-    const zoom = autoZoom(latSpan, lngSpan, 2, 10);
-    this.geo = buildGeo(bounds, zoom);
+    // Choose zoom level based on data spread
+    const span = Math.max(latSpan, lngSpan);
+    let zoom;
+    if (span > 100) zoom = 2;
+    else if (span > 50) zoom = 3;
+    else if (span > 20) zoom = 4;
+    else if (span > 10) zoom = 5;
+    else if (span > 5) zoom = 6;
+    else if (span > 2) zoom = 7;
+    else zoom = 8;
 
-    // Set viewBox
-    this.svg.setAttribute("viewBox", `0 0 ${this.geo.w} ${this.geo.h}`);
-    this.svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    // Build geo centered on trip midpoint, matching SVG aspect ratio
+    const aspect = rect.width / rect.height;
+    const hTiles = Math.max(3, Math.min(6, (1 << zoom) * 0.5));
+    const wTiles = hTiles * aspect;
+    const midTX = lon2t(midLng, zoom);
+    const midTY = lat2t(midLat, zoom);
+    const w = wTiles * TILE;
+    const h = hTiles * TILE;
+    this.geo = { zoom, w, h, minTX: midTX - wTiles / 2, minTY: midTY - hTiles / 2 };
+
+    // ViewBox matches SVG aspect ratio — no distortion
+    this.svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    this.svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
     // Defs
     const defs = S("defs", {}, this.svg);
@@ -1124,12 +1140,9 @@ class GlobalMapViewer {
     this.markerGroup = S("g", {}, this.mGrp);
     this.createMarkers();
 
-    // Center the map on the midpoint
-    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const midLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
-    const mid = proj(midLat, midLng, this.geo);
-    this.cx = this.geo.w / 2 - mid.x;
-    this.cy = this.geo.h / 2 - mid.y;
+    // Geo is already centered on midpoint, so no offset needed
+    this.cx = 0;
+    this.cy = 0;
 
     this.setupInteraction();
     this.syncTiles();
@@ -1239,11 +1252,8 @@ class GlobalMapViewer {
     svg.addEventListener("dblclick", (e) => {
       e.preventDefault();
       this.userScale = 1;
-      const lats = this.trips.map(t => t.lat);
-      const lngs = this.trips.map(t => t.lng);
-      const mid = proj((Math.max(...lats) + Math.min(...lats)) / 2, (Math.max(...lngs) + Math.min(...lngs)) / 2, this.geo);
-      this.cx = this.geo.w / 2 - mid.x;
-      this.cy = this.geo.h / 2 - mid.y;
+      this.cx = 0;
+      this.cy = 0;
       this.updateViewBox();
       this._lastTileCx = -9999;
     });
@@ -1314,7 +1324,7 @@ class GlobalMapViewer {
     const vbW = this.geo.w / s, vbH = this.geo.h / s;
     const vbX = (this.geo.w - vbW) / 2;
     const vbY = (this.geo.h - vbH) / 2;
-    const scale = Math.max(sr.width / vbW, sr.height / vbH);
+    const scale = Math.min(sr.width / vbW, sr.height / vbH);
     const vw = sr.width / scale, vh = sr.height / scale;
     const mapCX = (vbX + vbW / 2) - this.cx;
     const mapCY = (vbY + vbH / 2) - this.cy;

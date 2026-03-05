@@ -1,5 +1,19 @@
 [
   {
+    "name": "Miami",
+    "region": "Miami, FL",
+    "date": "2026-03-04",
+    "description": "",
+    "coverImage": "/images/hiking-journal/miami/IMG20250715154444-dda693d0ec99.jpg",
+    "file": "miami.json",
+    "lat": 25.778,
+    "lng": -80.188,
+    "stats": {
+      "distanceKm": 6.3,
+      "elevationGainM": 77
+    }
+  },
+  {
     "name": "Kumano Kodo Pilgrimage",
     "region": "Kii Peninsula, Japan",
     "date": "2024-04-15",
@@ -11,20 +25,6 @@
     "stats": {
       "distanceKm": 12.5,
       "elevationGainM": 680
-    }
-  },
-  {
-    "name": "Miami",
-    "region": "Miami, FL",
-    "date": "2026-03-04",
-    "description": "Exploring the vibrant streets and beaches of Miami",
-    "coverImage": "/images/hiking-journal/miami/IMG20250715154444-dda693d0ec99.jpg",
-    "file": "miami.json",
-    "lat": 25.778,
-    "lng": -80.189,
-    "stats": {
-      "distanceKm": 6.3,
-      "elevationGainM": 77
     }
   }
 ]

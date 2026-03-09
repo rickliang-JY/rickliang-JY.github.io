@@ -9,17 +9,51 @@
 </head>
 <body>
 
-  <!-- GLOBAL MAP VIEW -->
-  <div id="global-map" class="global-map">
-    <div class="global-map-topbar">
-      <a href="/" class="global-map-home">&larr; Back to main site</a>
-      <span class="global-map-title">Hiking Journal</span>
-    </div>
-    <svg id="global-svg" class="global-svg"></svg>
-  </div>
+  <!-- APP SHELL: sidebar + main -->
+  <div id="app" class="app-shell">
 
-  <!-- TRIP VIEW (hidden initially) -->
-  <div id="trip-view" class="hj-root hj-v5" style="display:none"></div>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-home">&larr; Home</a>
+        <h1 class="sidebar-title">Hiking Journal</h1>
+        <p class="sidebar-subtitle">Travel stories & trail maps</p>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="search-input" placeholder="Search trips..." class="search-input" />
+      </div>
+
+      <div class="sidebar-sort">
+        <button class="sort-btn active" data-sort="date">Newest</button>
+        <button class="sort-btn" data-sort="name">A-Z</button>
+        <button class="sort-btn" data-sort="distance">Distance</button>
+      </div>
+
+      <div id="trip-list" class="trip-list"></div>
+
+      <div class="sidebar-footer">
+        <span class="sidebar-footer-text" id="trip-count"></span>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR TOGGLE (for mobile) -->
+    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+      <span class="toggle-icon"></span>
+    </button>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content" class="main-content">
+      <!-- Global map (default view) -->
+      <div id="global-map" class="global-map">
+        <svg id="global-svg" class="global-svg"></svg>
+      </div>
+
+      <!-- Trip scrollytelling view (hidden initially) -->
+      <div id="trip-view" class="hj-root hj-v5" style="display:none"></div>
+    </main>
+
+  </div>
 
   <script src="app.js"></script>
 </body>

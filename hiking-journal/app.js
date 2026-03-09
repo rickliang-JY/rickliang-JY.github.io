@@ -1389,6 +1389,9 @@ class GlobalMapViewer {
 let viewer = null;
 let globalMap = null;
 let tripsData = null;
+let currentSort = "date";
+let currentSearch = "";
+let activeFile = null;
 
 async function loadTripIndex() {
   const resp = await fetch("data/trips.json");
@@ -1400,16 +1403,168 @@ async function loadTripData(filename) {
   return resp.json();
 }
 
+// === Sidebar Trip List ===
+function renderTripList() {
+  const container = document.getElementById("trip-list");
+  if (!container || !tripsData) return;
+
+  // Filter
+  let filtered = tripsData;
+  if (currentSearch.trim()) {
+    const q = currentSearch.toLowerCase();
+    filtered = tripsData.filter(t =>
+      (t.name || "").toLowerCase().includes(q) ||
+      (t.region || "").toLowerCase().includes(q) ||
+      (t.date || "").includes(q)
+    );
+  }
+
+  // Sort
+  filtered = [...filtered];
+  if (currentSort === "date") {
+    filtered.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  } else if (currentSort === "name") {
+    filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } else if (currentSort === "distance") {
+    filtered.sort((a, b) => (b.stats?.distanceKm || 0) - (a.stats?.distanceKm || 0));
+  }
+
+  container.innerHTML = "";
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;padding:2rem 1rem;color:#94a3b8;font-size:0.85rem;";
+    empty.textContent = currentSearch ? "No trips match your search" : "No trips yet";
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const trip of filtered) {
+    const card = document.createElement("div");
+    card.className = "trip-card" + (trip.file === activeFile ? " active" : "");
+    card.addEventListener("click", () => openTrip(trip.file));
+
+    // Cover image or placeholder
+    if (trip.coverImage) {
+      const img = document.createElement("img");
+      img.className = "trip-card-cover";
+      img.src = trip.coverImage;
+      img.alt = trip.name;
+      img.loading = "lazy";
+      card.appendChild(img);
+    } else {
+      const ph = document.createElement("div");
+      ph.className = "trip-card-cover-placeholder";
+      ph.textContent = "\u{1F3D4}\uFE0F";
+      card.appendChild(ph);
+    }
+
+    // Info
+    const info = document.createElement("div");
+    info.className = "trip-card-info";
+
+    const name = document.createElement("p");
+    name.className = "trip-card-name";
+    name.textContent = trip.name || "Untitled";
+    info.appendChild(name);
+
+    const region = document.createElement("p");
+    region.className = "trip-card-region";
+    if (trip.region) {
+      region.textContent = trip.region;
+    }
+    if (trip.date) {
+      const dateSpan = document.createElement("span");
+      dateSpan.className = "trip-card-date";
+      dateSpan.textContent = (trip.region ? " \u00B7 " : "") + formatDate(trip.date);
+      region.appendChild(dateSpan);
+    }
+    info.appendChild(region);
+
+    // Stats
+    if (trip.stats && (trip.stats.distanceKm || trip.stats.elevationGainM)) {
+      const meta = document.createElement("div");
+      meta.className = "trip-card-meta";
+      const parts = [];
+      if (trip.stats.distanceKm) parts.push(`${trip.stats.distanceKm} km`);
+      if (trip.stats.elevationGainM) parts.push(`\u2191${trip.stats.elevationGainM}m`);
+      meta.textContent = parts.join(" \u00B7 ");
+      info.appendChild(meta);
+    }
+
+    card.appendChild(info);
+    container.appendChild(card);
+  }
+
+  // Update count
+  const countEl = document.getElementById("trip-count");
+  if (countEl) {
+    countEl.textContent = `${filtered.length} trip${filtered.length !== 1 ? "s" : ""}`;
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// === Sidebar Event Handlers ===
+function setupSidebar() {
+  // Search
+  const searchInput = document.getElementById("search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      currentSearch = e.target.value;
+      renderTripList();
+    });
+  }
+
+  // Sort buttons
+  document.querySelectorAll(".sort-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sort-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentSort = btn.dataset.sort;
+      renderTripList();
+    });
+  });
+
+  // Mobile toggle
+  const toggle = document.getElementById("sidebar-toggle");
+  const sidebar = document.getElementById("sidebar");
+  if (toggle && sidebar) {
+    // Create overlay
+    const overlay = document.createElement("div");
+    overlay.className = "sidebar-overlay";
+    document.body.appendChild(overlay);
+
+    toggle.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("active");
+    });
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    });
+  }
+}
+
+// === Map & Trip Navigation ===
 function showGlobalMap() {
+  activeFile = null;
   document.getElementById("global-map").style.display = "";
   document.getElementById("trip-view").style.display = "none";
   if (globalMap) globalMap.destroy();
   const svg = document.getElementById("global-svg");
   globalMap = new GlobalMapViewer(svg);
   globalMap.loadTrips(tripsData);
+  renderTripList(); // update active state
 }
 
 async function openTrip(filename) {
+  activeFile = filename;
   if (globalMap) { globalMap.destroy(); globalMap = null; }
   document.getElementById("global-map").style.display = "none";
   const container = document.getElementById("trip-view");
@@ -1419,6 +1574,13 @@ async function openTrip(filename) {
   if (viewer) viewer.destroy();
   viewer = new HikingJournalViewer(container);
   viewer.loadTrip(data);
+  renderTripList(); // update active state
+
+  // Close mobile sidebar
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.querySelector(".sidebar-overlay");
+  if (sidebar) sidebar.classList.remove("open");
+  if (overlay) overlay.classList.remove("active");
 }
 
 function backToList() {
@@ -1431,6 +1593,8 @@ function backToList() {
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     tripsData = await loadTripIndex();
+    setupSidebar();
+    renderTripList();
     showGlobalMap();
   } catch (err) {
     console.error("Failed to load trip index:", err);

@@ -44,9 +44,11 @@ def parse_frontmatter(md_text):
             key = match.group(1)
             val = match.group(2).strip()
             # Remove surrounding quotes
-            if (val.startswith('"') and val.endswith('"')) or \
-               (val.startswith("'") and val.endswith("'")):
+            if val.startswith('"') and val.endswith('"'):
                 val = val[1:-1]
+            elif val.startswith("'") and val.endswith("'"):
+                # YAML single-quote escaping: '' inside single-quoted strings means literal '
+                val = val[1:-1].replace("''", "'")
             fm[key] = val
 
     return fm, body

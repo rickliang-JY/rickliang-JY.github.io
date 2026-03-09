@@ -1,11 +1,25 @@
 [
   {
-    "name": "Miami",
-    "region": "Miami, FL",
-    "date": "2026-03-04",
+    "name": "Chicago Lakeview and downtown",
+    "region": "Chicago, IL",
+    "date": "2026-03-08",
     "description": "",
-    "coverImage": "/images/hiking-journal/miami/IMG20250715154444-dda693d0ec99.jpg",
-    "file": "miami.json",
+    "coverImage": "/images/hiking-journal/chicago-lakeview-and-downtown/IMG20260308145814.jpg",
+    "file": "chicago-lakeview-and-downtown.json",
+    "lat": 41.874,
+    "lng": -87.613,
+    "stats": {
+      "distanceKm": 9.7,
+      "elevationGainM": 331
+    }
+  },
+  {
+    "name": "Miami Downtown Trip",
+    "region": "Miami, FL",
+    "date": "2026-03-07",
+    "description": "",
+    "coverImage": "/images/hiking-journal/miami-downtown-trip/IMG20250715154444.jpg",
+    "file": "miami-downtown-trip.json",
     "lat": 25.778,
     "lng": -80.188,
     "stats": {

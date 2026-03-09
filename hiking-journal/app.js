@@ -788,13 +788,16 @@ class HikingJournalViewer {
 
       let tipX, tipY;
       let targetDist = 0;
-      const fi = Math.floor(sp), fp = sp - fi;
+      const fi = Math.min(Math.floor(sp), this.pts.length - 1);
+      const fp = fi === this.pts.length - 1 ? Math.min(1, sp - (this.pts.length - 1)) : sp - Math.floor(sp);
 
       if (this.hasTrack) {
         const d1 = this.pts[fi].trackDist;
         const d2 = fi < this.pts.length - 1 ? this.pts[fi + 1].trackDist : this.totalDist;
-        targetDist = d1 + (d2 - d1) * fp;
-        const tip = interpAt(targetDist, this.route, this.routeDists);
+        const tipDist = d1 + (d2 - d1) * fp;
+        // Route line: first segment fills from START (0), others fill normally
+        targetDist = fi === 0 ? fp * d1 : tipDist;
+        const tip = interpAt(tipDist, this.route, this.routeDists);
         tipX = tip.x;
         tipY = tip.y;
       } else {
@@ -814,8 +817,12 @@ class HikingJournalViewer {
         if (Math.abs(this.userOffX) < 0.5) this.userOffX = 0;
         if (Math.abs(this.userOffY) < 0.5) this.userOffY = 0;
       }
-      this.cx += (tcx - this.cx) * 0.18;
-      this.cy += (tcy - this.cy) * 0.18;
+      // Adaptive lerp: fast catch-up when camera is far behind, smooth when close
+      const camDx = tcx - this.cx, camDy = tcy - this.cy;
+      const camGap = Math.sqrt(camDx * camDx + camDy * camDy);
+      const lerp = camGap > TILE * 3 ? 0.5 : camGap > TILE ? 0.3 : 0.18;
+      this.cx += camDx * lerp;
+      this.cy += camDy * lerp;
       if (this.mGrp) this.mGrp.setAttribute("transform", `translate(${this.cx},${this.cy})`);
 
       if (Math.abs(this.cx - this._lastTileCx) > TILE / 2 || Math.abs(this.cy - this._lastTileCy) > TILE / 2) {
@@ -902,7 +909,12 @@ class HikingJournalViewer {
       this.cones[i].setAttribute("visibility", i < wraps.length ? "visible" : "hidden");
     }
     const tx = tipX + this.cx, ty = tipY + this.cy;
-    const scrollRect = this.scrollEl.getBoundingClientRect();
+    // Cache scrollRect to avoid layout thrashing in RAF loop
+    if (!this._scrollRect || this._scrollRectAge++ > 30) {
+      this._scrollRect = this.scrollEl.getBoundingClientRect();
+      this._scrollRectAge = 0;
+    }
+    const scrollRect = this._scrollRect;
     const scrollH = scrollRect.height;
     for (let i = 0; i < wraps.length; i++) {
       const ir = wraps[i].getBoundingClientRect();

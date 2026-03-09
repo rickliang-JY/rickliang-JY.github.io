@@ -616,30 +616,15 @@ class HikingJournalViewer {
       this.pathLine = S("polyline", { points: pts, fill: "none", stroke: "#ef4444", "stroke-width": "3.5", "stroke-linecap": "round", "stroke-linejoin": "round", filter: "url(#lGlow)" }, g);
       this.pathLine.style.strokeDasharray = `${this.totalDist}`;
       this.pathLine.style.strokeDashoffset = `${this.totalDist}`;
-      for (let i = 0; i < this.pts.length - 1; i++) {
-        const a = this.pts[i], b = this.pts[i + 1];
-        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-        const ig = S("g", { transform: `translate(${mx},${my})` }, g);
-        this.iBgs[i] = S("circle", { r: "11", fill: "#fff", stroke: "#cbd5e1", "stroke-width": "1.5" }, ig);
-        const sv = S("g", { transform: "translate(-7,-7) scale(0.58)", class: "hj-icon hj-icon-gray" }, ig);
-        sv.appendChild(mkIcon());
-        this.iGs[i] = sv;
-      }
     } else {
       for (let i = 0; i < this.pts.length - 1; i++) {
         const a = this.pts[i], b = this.pts[i + 1];
-        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
         const sg = S("g", {}, g);
         S("line", { x1: `${a.x}`, y1: `${a.y}`, x2: `${b.x}`, y2: `${b.y}`, stroke: "#cbd5e1", "stroke-width": "2", "stroke-dasharray": "4,6", "stroke-linecap": "round" }, sg);
         const rl = S("line", { x1: `${a.x}`, y1: `${a.y}`, x2: `${b.x}`, y2: `${b.y}`, stroke: "#ef4444", "stroke-width": "3", "stroke-linecap": "round", filter: "url(#lGlow)" }, sg);
         rl.style.strokeDasharray = "0";
         rl.style.strokeDashoffset = "0";
         this.segs[i] = rl;
-        const ig = S("g", { transform: `translate(${mx},${my})` }, sg);
-        this.iBgs[i] = S("circle", { r: "11", fill: "#fff", stroke: "#cbd5e1", "stroke-width": "1.5" }, ig);
-        const sv = S("g", { transform: "translate(-7,-7) scale(0.58)", class: "hj-icon hj-icon-gray" }, ig);
-        sv.appendChild(mkIcon());
-        this.iGs[i] = sv;
       }
     }
   }
@@ -945,17 +930,6 @@ class HikingJournalViewer {
           l.style.strokeDasharray = `${len}`;
           l.style.strokeDashoffset = `${len * (1 - dr)}`;
         }
-      }
-    }
-    for (let j = 0; j < this.pts.length - 1; j++) {
-      const passed = this.hasTrack ? targetDist >= (this.pts[j].trackDist + this.pts[j + 1].trackDist) / 2 : Math.max(0, Math.min(1, sp - j)) >= 0.5;
-      if (this.iBgs[j]) {
-        this.iBgs[j].setAttribute("fill", passed ? "#ef4444" : "#fff");
-        this.iBgs[j].setAttribute("stroke", passed ? "none" : "#cbd5e1");
-      }
-      if (this.iGs[j]) {
-        this.iGs[j].classList.toggle("hj-icon-gray", !passed);
-        this.iGs[j].classList.toggle("hj-icon-white", passed);
       }
     }
   }
@@ -1531,19 +1505,43 @@ function setupSidebar() {
     });
   });
 
-  // Mobile toggle
+  // Sidebar collapse/expand
   const toggle = document.getElementById("sidebar-toggle");
   const sidebar = document.getElementById("sidebar");
-  if (toggle && sidebar) {
-    // Create overlay
+  const collapseBtn = document.getElementById("sidebar-collapse");
+
+  if (sidebar) {
+    // Create overlay for mobile
     const overlay = document.createElement("div");
     overlay.className = "sidebar-overlay";
     document.body.appendChild(overlay);
 
-    toggle.addEventListener("click", () => {
-      sidebar.classList.toggle("open");
-      overlay.classList.toggle("active");
-    });
+    // Collapse button (×) inside sidebar
+    if (collapseBtn) {
+      collapseBtn.addEventListener("click", () => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          sidebar.classList.remove("open");
+          overlay.classList.remove("active");
+        } else {
+          sidebar.classList.add("collapsed");
+        }
+      });
+    }
+
+    // Toggle button (hamburger) to reopen
+    if (toggle) {
+      toggle.addEventListener("click", () => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          sidebar.classList.toggle("open");
+          overlay.classList.toggle("active");
+        } else {
+          sidebar.classList.remove("collapsed");
+        }
+      });
+    }
+
     overlay.addEventListener("click", () => {
       sidebar.classList.remove("open");
       overlay.classList.remove("active");

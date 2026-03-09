@@ -50,6 +50,12 @@ body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--text-n
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.sidebar-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .sidebar-home {
   color: var(--text-faint);
   text-decoration: none;
@@ -58,6 +64,18 @@ body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--text-n
   transition: color 0.15s;
 }
 .sidebar-home:hover { color: var(--accent-red); }
+
+.sidebar-collapse {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.sidebar-collapse:hover { color: var(--accent-red); }
 
 .sidebar-title {
   font-size: 1.4rem;
@@ -221,7 +239,15 @@ body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--text-n
   color: var(--text-faint);
 }
 
-/* Sidebar toggle (mobile) */
+/* Desktop sidebar collapsed state */
+.sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+/* Sidebar toggle button */
 .sidebar-toggle {
   display: none;
   position: fixed;
@@ -239,6 +265,10 @@ body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--text-n
   cursor: pointer;
   align-items: center;
   justify-content: center;
+}
+/* Show toggle when sidebar is collapsed on desktop */
+.sidebar.collapsed ~ .sidebar-toggle {
+  display: flex;
 }
 .toggle-icon {
   display: block;

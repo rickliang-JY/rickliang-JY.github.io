@@ -15,7 +15,10 @@
     <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
-        <a href="/" class="sidebar-home">&larr; Home</a>
+        <div class="sidebar-header-row">
+          <a href="/" class="sidebar-home">&larr; Home</a>
+          <button id="sidebar-collapse" class="sidebar-collapse" aria-label="Close sidebar">&times;</button>
+        </div>
         <h1 class="sidebar-title">Hiking Journal</h1>
         <p class="sidebar-subtitle">Travel stories & trail maps</p>
       </div>
@@ -37,8 +40,8 @@
       </div>
     </aside>
 
-    <!-- SIDEBAR TOGGLE (for mobile) -->
-    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+    <!-- SIDEBAR TOGGLE (visible when sidebar is collapsed) -->
+    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Open sidebar">
       <span class="toggle-icon"></span>
     </button>
 

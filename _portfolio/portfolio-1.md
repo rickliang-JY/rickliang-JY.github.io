@@ -1,6 +1,6 @@
 ---
 title: "HikerScrolls — Beautiful Travel Journals from Obsidian"
-excerpt: "An Obsidian plugin that turns your trip notes into stunning, shareable travel journals with GPX route maps, AI-generated pen sketches, and scrollytelling layouts.<br/><img src='/images/hikerscrolls_preview.png'>"
+excerpt: "An Obsidian plugin that turns your trip notes into stunning, shareable travel journals with GPX route maps, AI-generated pen sketches, and scrollytelling layouts.<br/><img src='/images/hikerscrolls_template.gif'>"
 collection: portfolio
 ---
 

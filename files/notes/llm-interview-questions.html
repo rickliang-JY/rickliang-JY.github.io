@@ -27180,13 +27180,46 @@ Phase 4: 性能调优（3-7天）
                     .replace(/<strong>([\s\S]*?)<\/strong>/g, '__$1__')
                     .replace(/<br\s*\/?>/gi, ' ');
         }
-        // <em>X</em> whose X contains `$` must be a markdown cross-math artifact.
+        // <em>/<strong> is a cross-math artifact ONLY when its opening tag is inside an
+        // unclosed math span (markdown paired _/* markers across math). If the tag opens
+        // at zero math-depth, it's legitimate italic/bold — preserve unchanged.
         function unwrapCrossMath(html) {
-            return html.replace(/<em>([\s\S]*?)<\/em>/g, function(m, c) {
-                return c.indexOf('$') !== -1 ? '_' + c + '_' : m;
-            }).replace(/<strong>([\s\S]*?)<\/strong>/g, function(m, c) {
-                return c.indexOf('$') !== -1 ? '__' + c + '__' : m;
-            });
+            var out = '';
+            var i = 0;
+            var inBlock = false, inInline = false;
+            function feed(s) {
+                var j = 0;
+                while (j < s.length) {
+                    if (s[j] === '$' && s[j+1] === '$') { inBlock = !inBlock; j += 2; }
+                    else if (s[j] === '$' && !inBlock) { inInline = !inInline; j++; }
+                    else { j++; }
+                }
+            }
+            function tryTag(tag) {
+                var open = '<' + tag + '>';
+                if (html.substr(i, open.length) !== open) return false;
+                var close = html.indexOf('</' + tag + '>', i + open.length);
+                if (close === -1) return false;
+                var content = html.substring(i + open.length, close);
+                var marker = (tag === 'em') ? '_' : '__';
+                if ((inInline || inBlock) && content.indexOf('$') !== -1) {
+                    out += marker + content + marker;
+                } else {
+                    out += open + content + '</' + tag + '>';
+                }
+                feed(content);
+                i = close + tag.length + 3;
+                return true;
+            }
+            while (i < html.length) {
+                if (html[i] === '$' && html[i+1] === '$') { inBlock = !inBlock; out += '$$'; i += 2; continue; }
+                if (html[i] === '$' && !inBlock) { inInline = !inInline; out += '$'; i++; continue; }
+                if (tryTag('em')) continue;
+                if (tryTag('strong')) continue;
+                out += html[i];
+                i++;
+            }
+            return out;
         }
         var hosts = document.querySelectorAll('p, li, td, th, dd, blockquote, .question, .theorem-box');
         var rxBlock = /\$\$([\s\S]*?)\$\$/g;

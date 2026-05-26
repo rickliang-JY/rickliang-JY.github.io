@@ -428,7 +428,8 @@
 
         body { transition: padding-left 0.3s ease, background-color 0.25s ease, color 0.25s ease; }
         @media (min-width: 1024px) {
-            body:not(.sidebar-collapsed) { padding-left: 280px; }
+            /* 280px sidebar + 36px gap; right padding so text doesn't hug the edge */
+            body:not(.sidebar-collapsed) { padding-left: 316px; padding-right: 28px; }
         }
         @media print {
             .sidebar, .sidebar-open, .sidebar-close { display: none !important; }
@@ -444,7 +445,7 @@
             font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1.75;
+            line-height: 1.95;
             font-size: 10.5pt;
             margin: 0;
             padding: 0;
@@ -653,11 +654,12 @@
         }
 
         p {
-            margin: 8px 0;
+            margin: 14px 0;
             text-align: justify;
             orphans: 3;
             widows: 3;
         }
+        li { margin: 6px 0; }
 
         strong {
             color: var(--strong-color);
@@ -857,7 +859,7 @@
         <span class="sidebar-head-title">目录</span>
         <button class="sidebar-close" id="sidebarClose" title="收起目录" aria-label="Close sidebar">×</button>
     </div>
-    <a class="sidebar-backlink" href="/year-archive/" title="返回博客首页">← 返回博客</a>
+    <a class="sidebar-backlink" href="/notes/" title="返回笔记列表">← 返回笔记列表</a>
     <ul class="sidebar-toc" id="sidebarToc"></ul>
 </aside>
 <script>
@@ -902,6 +904,23 @@
                 a.className = 'lvl-' + lvl;
                 a.dataset.target = h.id;
                 a.addEventListener('click', function(e) {
+                    // Override native anchor scroll — content-visibility:auto causes the
+                    // browser to land at the wrong vertical offset because chapter intrinsic
+                    // sizes differ from actual rendered heights. Force-render the section
+                    // first, then scroll, then re-scroll to correct any drift.
+                    e.preventDefault();
+                    var tgt = document.getElementById(a.dataset.target);
+                    if (!tgt) return;
+                    var section = tgt.closest('.chapter');
+                    if (section) {
+                        try { renderMathInElement(section, KATEX_OPTS); } catch(err) {}
+                        if (typeof mermaid !== 'undefined') {
+                            try { mermaid.run({ nodes: section.querySelectorAll('.mermaid:not([data-processed="true"])') }); } catch(err) {}
+                        }
+                    }
+                    history.replaceState(null, '', '#' + a.dataset.target);
+                    tgt.scrollIntoView({ block: 'start' });
+                    setTimeout(function() { tgt.scrollIntoView({ block: 'start' }); }, 250);
                     if (window.innerWidth < 1024) setCollapsed(true);
                 });
                 li.appendChild(a);

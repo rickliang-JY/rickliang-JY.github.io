@@ -187,7 +187,8 @@
 
         body { transition: padding-left 0.3s ease, background-color 0.25s ease, color 0.25s ease; }
         @media screen and (min-width: 1100px) {
-            body:not(.sidebar-collapsed) { padding-left: 300px; }
+            /* 300px sidebar + 36px gap so text isn't flush against the divider */
+            body:not(.sidebar-collapsed) { padding-left: 336px; padding-right: 28px; }
         }
         @media print {
             .sidebar, .sidebar-open, .sidebar-close { display: none !important; }
@@ -212,20 +213,32 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             font-family: "Noto Serif SC", Georgia, "Times New Roman", serif;
-            font-size: 10.5pt;
-            line-height: 1.7;
+            font-size: 11pt;
+            line-height: 1.95;
             string-set: doctitle "";
         }
+        p { margin: 0.9em 0; }
+        li { margin: 0.45em 0; }
+        h2 { margin-top: 1.4em; margin-bottom: 0.7em; }
+        h3 { margin-top: 1.2em; margin-bottom: 0.55em; }
+        h4 { margin-top: 1em; margin-bottom: 0.45em; }
+        h5 { margin-top: 0.85em; margin-bottom: 0.4em; }
 
         .cover {
-            width: 210mm;
-            height: 297mm;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0;
             position: relative;
             overflow: hidden;
             background: var(--bg-primary);
             page: cover;
             page-break-after: always;
+        }
+        @media print {
+            .cover { width: 210mm; height: 297mm; min-height: auto; display: block; }
         }
         .cover::before {
             content: '';
@@ -246,13 +259,19 @@
             background: radial-gradient(ellipse, rgba(243,139,168,0.06) 0%, transparent 70%);
         }
         .cover-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: relative;
             text-align: center;
             width: 80%;
+            max-width: 720px;
             z-index: 1;
+        }
+        @media print {
+            .cover-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
         }
         .cover-badge {
             display: inline-block;
@@ -475,7 +494,7 @@
         <span class="sidebar-head-title">目录</span>
         <button class="sidebar-close" id="sidebarClose" title="收起目录" aria-label="Close sidebar">×</button>
     </div>
-    <a class="sidebar-backlink" href="/year-archive/" title="返回博客首页">← 返回博客</a>
+    <a class="sidebar-backlink" href="/notes/" title="返回笔记列表">← 返回笔记列表</a>
     <ul class="sidebar-toc" id="sidebarToc"></ul>
 </aside>
 <script>
@@ -515,7 +534,24 @@
                 var lvl = h.tagName === 'H1' ? 1 : 2;
                 a.className = 'lvl-' + lvl;
                 a.dataset.target = h.id;
-                a.addEventListener('click', function() {
+                a.addEventListener('click', function(e) {
+                    // content-visibility:auto causes intrinsic-size to differ from rendered
+                    // height — the browser's native anchor scroll lands at the wrong spot.
+                    // Force render the math/diagrams in the target's section, then scroll
+                    // twice (once to trigger materialization, once to correct any drift).
+                    e.preventDefault();
+                    var tgt = document.getElementById(a.dataset.target);
+                    if (!tgt) return;
+                    var section = tgt.closest('.lazy-section');
+                    if (section) {
+                        try { renderMathInElement(section, KATEX_OPTS); } catch(err) {}
+                        if (typeof mermaid !== 'undefined') {
+                            try { mermaid.run({ nodes: section.querySelectorAll('.mermaid:not([data-processed="true"])') }); } catch(err) {}
+                        }
+                    }
+                    history.replaceState(null, '', '#' + a.dataset.target);
+                    tgt.scrollIntoView({ block: 'start' });
+                    setTimeout(function() { tgt.scrollIntoView({ block: 'start' }); }, 250);
                     if (window.innerWidth < 1024) setCollapsed(true);
                 });
                 li.appendChild(a);

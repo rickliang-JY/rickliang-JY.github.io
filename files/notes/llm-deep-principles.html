@@ -100,6 +100,34 @@
             }
         };
 
+        // Fix broken code blocks: the markdown pipeline emitted `<p><code>LANG\n...content...</code>LANG</p>`
+        // instead of `<pre><code class="language-LANG">...</code></pre>`. Reconstruct.
+        function fixBrokenCodeBlocks() {
+            document.querySelectorAll('p').forEach(function(p) {
+                if (p.childNodes.length !== 2) return;
+                var codeEl = p.firstChild;
+                var tail = p.lastChild;
+                if (!codeEl || codeEl.nodeType !== 1 || codeEl.tagName !== 'CODE') return;
+                if (!tail || tail.nodeType !== 3) return;
+                var leading = codeEl.firstChild;
+                if (!leading || leading.nodeType !== 3) return;
+                var m = leading.textContent.match(/^([a-z][a-z0-9]*)\n/);
+                if (!m) return;
+                var lang = m[1];
+                // Trailing text should be a short language-identifier-like word (any lang;
+                // the markdown pipeline occasionally emits a different one than the opener).
+                if (!/^[a-z][a-z0-9]*$/i.test(tail.textContent.trim())) return;
+                // Confirmed broken code block — rebuild as <pre><code class="language-LANG">...</code></pre>
+                leading.textContent = leading.textContent.substring(lang.length + 1);
+                var pre = document.createElement('pre');
+                var newCode = document.createElement('code');
+                newCode.className = 'language-' + lang;
+                while (codeEl.firstChild) newCode.appendChild(codeEl.firstChild);
+                pre.appendChild(newCode);
+                p.parentNode.replaceChild(pre, p);
+            });
+        }
+
         // Convert <pre class="diagram-content"> blocks (mermaid source code) into
         // <div class="mermaid diagram-content"> so mermaid can render them as real diagrams.
         function convertMermaidBlocks() {
@@ -173,10 +201,21 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
+            fixBrokenCodeBlocks();   // must run BEFORE prepareMath/KaTeX so math inside accidental code blocks is freed
             prepareMath();
             convertMermaidBlocks();
             setupLazyKatex();
             setupLazyMermaid();
+        });
+
+        // Safety net: after everything loaded + a brief delay, force a final render pass
+        // for any math/diagrams the lazy IO might have missed (e.g., cells inside collapsed
+        // content-visibility regions, or sections the user already scrolled past quickly).
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                try { renderMathInElement(document.body, KATEX_OPTS); } catch(e) {}
+                if (typeof mermaid !== 'undefined') { try { mermaid.run(); } catch(e) {} }
+            }, 1500);
         });
 
         // Before printing, force-render any math/diagrams still in lazy sections.

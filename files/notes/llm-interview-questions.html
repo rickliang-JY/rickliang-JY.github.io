@@ -27275,6 +27275,15 @@ Phase 4: 性能调优（3-7天）
         setupLazyMermaid();
     });
 
+    // Safety net: ~1.5s after window.load, force a final render pass to catch anything
+    // the lazy IO missed (KaTeX is idempotent; mermaid skips data-processed elements).
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            try { renderMathInElement(document.body, KATEX_OPTS); } catch(e) {}
+            if (typeof mermaid !== 'undefined') { try { mermaid.run(); } catch(e) {} }
+        }, 1500);
+    });
+
     // Before printing, force-render any math/diagrams still pending in lazy sections.
     window.addEventListener('beforeprint', function() {
         try { renderMathInElement(document.body, KATEX_OPTS); } catch(e) {}

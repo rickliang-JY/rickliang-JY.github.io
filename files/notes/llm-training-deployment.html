@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 大规模训练与部署：分布式训练与推理服务工程</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- Mermaid (for rendering diagram-note source code as actual diagrams) -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        // Pre-process repairs for markdown→HTML corruption that broke math rendering:
+        //   (a) `_x_` LaTeX subscripts were turned into <em>x</em> by the markdown italic rule
+        //   (b) `$$<br/>...<br/>$$` block math has <br> tags inside delimiters, blocking KaTeX
+        //   (c) `|` pipe inside LaTeX (e.g. \pi(a|s)) split table cells in two
+        function prepareMath() {
+            function stripMarkup(s) {
+                return s.replace(/<em>([\s\S]*?)<\/em>/g, '_$1_')
+                        .replace(/<strong>([\s\S]*?)<\/strong>/g, '__$1__')
+                        .replace(/<br\s*\/?>/gi, ' ');
+            }
+            // A markdown <em>/<strong> is a cross-math artifact ONLY when its opening tag
+            // sits inside an unclosed math span (because the parser paired _/* markers from
+            // adjacent math expressions). If the tag opens at zero math-depth, it's a
+            // legitimate italic/bold — preserve it (e.g. <strong>$O(n^2)$</strong>).
+            function unwrapCrossMath(html) {
+                var out = '';
+                var i = 0;
+                var inBlock = false;   // inside $$...$$
+                var inInline = false;  // inside $...$
+                function feed(s) {
+                    var j = 0;
+                    while (j < s.length) {
+                        if (s[j] === '$' && s[j+1] === '$') { inBlock = !inBlock; j += 2; }
+                        else if (s[j] === '$' && !inBlock) { inInline = !inInline; j++; }
+                        else { j++; }
+                    }
+                }
+                function tryTag(tag) {
+                    var open = '<' + tag + '>';
+                    if (html.substr(i, open.length) !== open) return false;
+                    var close = html.indexOf('</' + tag + '>', i + open.length);
+                    if (close === -1) return false;
+                    var content = html.substring(i + open.length, close);
+                    var marker = (tag === 'em') ? '_' : '__';
+                    if ((inInline || inBlock) && content.indexOf('$') !== -1) {
+                        out += marker + content + marker;
+                    } else {
+                        out += open + content + '</' + tag + '>';
+                    }
+                    feed(content);
+                    i = close + tag.length + 3; // past </tag>
+                    return true;
+                }
+                while (i < html.length) {
+                    if (html[i] === '$' && html[i+1] === '$') { inBlock = !inBlock; out += '$$'; i += 2; continue; }
+                    if (html[i] === '$' && !inBlock) { inInline = !inInline; out += '$'; i++; continue; }
+                    if (tryTag('em')) continue;
+                    if (tryTag('strong')) continue;
+                    out += html[i];
+                    i++;
+                }
+                return out;
+            }
+            var hosts = document.querySelectorAll('p, li, td, th, dd, blockquote, .question, .theorem-box');
+            var rxBlock = /\$\$([\s\S]*?)\$\$/g;
+            var rxInline = /(^|[^\$])\$([^\$\n][^\$]*?)\$(?!\$)/g;
+            hosts.forEach(function(el) {
+                // textContent is cheaper than innerHTML — skip elements without `$` early
+                if (el.textContent.indexOf('$') === -1) return;
+                var html = el.innerHTML;
+                if (!/<em>|<strong>|<br/i.test(html)) return;
+                // Pass 1: undo cross-math <em>/<strong> spans (their content has `$`)
+                var fixed = unwrapCrossMath(html);
+                // Pass 2: undo remaining same-region artifacts inside $..$ / $$..$$
+                fixed = fixed.replace(rxBlock, function(_, c) { return '$$' + stripMarkup(c) + '$$'; });
+                fixed = fixed.replace(rxInline, function(m, pre, c) { return pre + '$' + stripMarkup(c) + '$'; });
+                if (fixed !== html) el.innerHTML = fixed;
+            });
+
+            // (c) Merge adjacent <td> cells that markdown table parser split on a `|` inside math.
+            // Heuristic: a cell has an odd count of standalone `$` (i.e. `$` not part of `$$`)
+            // exactly when it contains an unclosed inline math span.
+            function singleDollarCount(s) {
+                var total = (s.match(/\$/g) || []).length;
+                var pairs = (s.match(/\$\$/g) || []).length;
+                return total - 2 * pairs;
+            }
+            document.querySelectorAll('tr').forEach(function(tr) {
+                var i = 0;
+                while (i < tr.children.length - 1) {
+                    var cur = tr.children[i];
+                    var nxt = tr.children[i+1];
+                    if (cur.tagName !== 'TD' || nxt.tagName !== 'TD') { i++; continue; }
+                    if (singleDollarCount(cur.innerHTML) % 2 === 1 &&
+                        singleDollarCount(nxt.innerHTML) % 2 === 1) {
+                        cur.innerHTML = cur.innerHTML + '|' + nxt.innerHTML;
+                        nxt.remove();
+                        var fill = document.createElement('td');
+                        tr.appendChild(fill);
+                        // re-check this position in case 3+ cells were split
+                        continue;
+                    }
+                    i++;
+                }
+            });
+        }
+
+        var KATEX_OPTS = {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "\\[", right: "\\]", display: true},
+                {left: "$", right: "$", display: false},
+                {left: "\\(", right: "\\)", display: false}
+            ],
+            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+            ignoredClasses: ["mermaid"],
+            throwOnError: false,
+            errorColor: "#F38BA8",
+            trust: true,
+            strict: false,
+            macros: {
+                "\\E": "\\mathbb{E}",
+                "\\R": "\\mathbb{R}",
+                "\\N": "\\mathbb{N}",
+                "\\Z": "\\mathbb{Z}",
+                "\\argmax": "\\mathop{\\mathrm{arg\\,max}}",
+                "\\argmin": "\\mathop{\\mathrm{arg\\,min}}"
+            }
+        };
+
+        // Fix broken code blocks: the markdown pipeline emitted `<p><code>LANG\n...content...</code>LANG</p>`
+        // instead of `<pre><code class="language-LANG">...</code></pre>`. Reconstruct.
+        function fixBrokenCodeBlocks() {
+            document.querySelectorAll('p').forEach(function(p) {
+                if (p.childNodes.length !== 2) return;
+                var codeEl = p.firstChild;
+                var tail = p.lastChild;
+                if (!codeEl || codeEl.nodeType !== 1 || codeEl.tagName !== 'CODE') return;
+                if (!tail || tail.nodeType !== 3) return;
+                var leading = codeEl.firstChild;
+                if (!leading || leading.nodeType !== 3) return;
+                var m = leading.textContent.match(/^([a-z][a-z0-9]*)\n/);
+                if (!m) return;
+                var lang = m[1];
+                // Trailing text should be a short language-identifier-like word (any lang;
+                // the markdown pipeline occasionally emits a different one than the opener).
+                if (!/^[a-z][a-z0-9]*$/i.test(tail.textContent.trim())) return;
+                // Confirmed broken code block — rebuild as <pre><code class="language-LANG">...</code></pre>
+                leading.textContent = leading.textContent.substring(lang.length + 1);
+                var pre = document.createElement('pre');
+                var newCode = document.createElement('code');
+                newCode.className = 'language-' + lang;
+                while (codeEl.firstChild) newCode.appendChild(codeEl.firstChild);
+                pre.appendChild(newCode);
+                p.parentNode.replaceChild(pre, p);
+            });
+        }
+
+        // Convert <pre class="diagram-content"> blocks (mermaid source code) into
+        // <div class="mermaid diagram-content"> so mermaid can render them as real diagrams.
+        function convertMermaidBlocks() {
+            var pres = document.querySelectorAll('pre.diagram-content');
+            pres.forEach(function(pre) {
+                var div = document.createElement('div');
+                div.className = 'mermaid diagram-content';
+                div.textContent = pre.textContent;
+                pre.parentNode.replaceChild(div, pre);
+            });
+        }
+
+        function setupLazyMermaid() {
+            var diagrams = document.querySelectorAll('.mermaid');
+            if (!diagrams.length || typeof mermaid === 'undefined') return;
+            if (!('IntersectionObserver' in window)) {
+                try { mermaid.run(); } catch(e) {}
+                return;
+            }
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (!entry.isIntersecting) return;
+                    io.unobserve(entry.target);
+                    try { mermaid.run({ nodes: [entry.target] }); } catch(e) { console.warn('mermaid', e); }
+                });
+            }, { rootMargin: '600px 0px' });
+            diagrams.forEach(function(el) { io.observe(el); });
+        }
+
+        function setupLazyKatex() {
+            // Render math per-chapter (and cover/toc) only when scrolled near, instead of
+            // batching the whole body at startup. Cuts first paint by seconds on big docs.
+            var targets = document.querySelectorAll('.chapter, .cover-page, .toc-page');
+            if (!targets.length || !('IntersectionObserver' in window)) {
+                renderMathInElement(document.body, KATEX_OPTS);
+                return;
+            }
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (!entry.isIntersecting) return;
+                    var el = entry.target;
+                    io.unobserve(el);
+                    // Yield to idle so layout/paint of the rest of the page isn't blocked.
+                    // requestIdleCallback may never fire if the browser stays busy (scrolling,
+                    // other rendering) — pass `timeout` to force execution within ~400ms.
+                    var schedule = window.requestIdleCallback
+                        ? function(cb) { return requestIdleCallback(cb, { timeout: 400 }); }
+                        : function(cb) { return setTimeout(cb, 0); };
+                    schedule(function() { renderMathInElement(el, KATEX_OPTS); });
+                });
+            }, { rootMargin: '600px 0px' });
+            targets.forEach(function(t) { io.observe(t); });
+        }
+
+        if (typeof mermaid !== 'undefined') {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'neutral',
+                themeVariables: {
+                    primaryColor: '#CBA6F7',
+                    primaryTextColor: '#1E1E2E',
+                    primaryBorderColor: '#CBA6F7',
+                    lineColor: '#CDD6F4',
+                    secondaryColor: '#252535',
+                    tertiaryColor: '#181825',
+                    fontFamily: 'Noto Serif SC, Georgia, serif'
+                },
+                flowchart: { useMaxWidth: true, htmlLabels: true },
+                sequence: { useMaxWidth: true }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fixBrokenCodeBlocks();   // must run BEFORE prepareMath/KaTeX so math inside accidental code blocks is freed
+            prepareMath();
+            convertMermaidBlocks();
+            setupLazyKatex();
+            setupLazyMermaid();
+        });
+
+        // Safety net: after everything loaded + a brief delay, force a final render pass
+        // for any math/diagrams the lazy IO might have missed (e.g., cells inside collapsed
+        // content-visibility regions, or sections the user already scrolled past quickly).
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                try { renderMathInElement(document.body, KATEX_OPTS); } catch(e) {}
+                if (typeof mermaid !== 'undefined') { try { mermaid.run(); } catch(e) {} }
+            }, 1500);
+        });
+
+        // Before printing, force-render any math/diagrams still in lazy sections.
+        window.addEventListener('beforeprint', function() {
+            try { renderMathInElement(document.body, KATEX_OPTS); } catch(e) {}
+            if (typeof mermaid !== 'undefined') { try { mermaid.run(); } catch(e) {} }
+        });
+    </script>
+
+    <style>
+        /* ========== Paged.js Page Setup ========== */
+        @page {
+            size: A4;
+            margin: 18mm 15mm 20mm 15mm;
+            @bottom-center {
+                content: counter(page);
+                font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+                font-size: 9pt;
+                color: #A6ADC8;
+            }
+        }
+
+        @page:first {
+            @bottom-center { content: none; }
+        }
+
+        @page cover {
+            margin: 0;
+            @bottom-center { content: none; }
+        }
+
+        @page toc {
+            @bottom-center {
+                content: counter(page, lower-roman);
+            }
+        }
+
+        /* ========== Root Variables (Dark — default) ========== */
+        :root {
+            --bg-primary: #1E1E2E;
+            --bg-secondary: #252535;
+            --bg-code: #181825;
+            --text-primary: #CDD6F4;
+            --text-secondary: #A6ADC8;
+            --title-color: #CBA6F7;
+            --accent-color: #F38BA8;
+            --accent-green: #A6E3A1;
+            --accent-blue: #89B4FA;
+            --border-color: #45475A;
+            --strong-color: #E8ECF4;
+            --code-text: #CDD6F4;
+            --cover-grad-a: #1E1E2E;
+            --cover-grad-b: #252535;
+            --row-even: rgba(24, 24, 37, 0.3);
+            --row-hover: rgba(69, 71, 90, 0.2);
+            --shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ========== Light Mode — aligned with rickliang.github.io palette (teal #2f7f93) ========== */
+        body.light-mode {
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F7F8FA;
+            --bg-code: #F0F2F5;
+            --text-primary: #3A3D43;
+            --text-secondary: #7A8288;
+            --title-color: #2F7F93;
+            --accent-color: #C75450;
+            --accent-green: #4A8E3A;
+            --accent-blue: #2F7F93;
+            --border-color: #DDE1E6;
+            --strong-color: #1F2226;
+            --code-text: #3A3D43;
+            --cover-grad-a: #FFFFFF;
+            --cover-grad-b: #F0F4F6;
+            --row-even: rgba(122, 130, 136, 0.06);
+            --row-hover: rgba(47, 127, 147, 0.08);
+            --shadow: 0 2px 8px rgba(58, 61, 67, 0.10);
+        }
+
+        /* Theme transition is on `body` only (defined with sidebar rules below) — never `body *` */
+
+        /* ========== Theme Toggle Button ========== */
+        .theme-toggle {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 9999;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--title-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            padding: 0;
+        }
+        .theme-toggle:hover { transform: scale(1.06); }
+        .theme-toggle svg { width: 22px; height: 22px; }
+        .theme-toggle .icon-sun { display: none; }
+        body.light-mode .theme-toggle .icon-moon { display: none; }
+        body.light-mode .theme-toggle .icon-sun { display: block; }
+        @media print { .theme-toggle { display: none !important; } }
+
+        /* ========== Sidebar TOC ========== */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 9998;
+            font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+        body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+
+        .sidebar-head {
+            position: sticky; top: 0;
+            background: var(--bg-secondary);
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1;
+        }
+        .sidebar-head-title {
+            color: var(--title-color);
+            font-weight: 700;
+            font-size: 12pt;
+            letter-spacing: 2px;
+        }
+        .sidebar-close, .sidebar-open {
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 6px;
+            line-height: 1;
+        }
+        .sidebar-close {
+            width: 28px; height: 28px;
+            font-size: 18px;
+            padding: 0;
+        }
+        .sidebar-open {
+            position: fixed;
+            top: 18px; left: 18px;
+            z-index: 9999;
+            width: 44px; height: 44px;
+            font-size: 22px;
+            background: var(--bg-secondary);
+            box-shadow: var(--shadow);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        body.sidebar-collapsed .sidebar-open { display: flex; }
+
+        .sidebar-backlink {
+            display: block;
+            padding: 8px 18px;
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 9.5pt;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-backlink:hover { background: var(--row-hover); }
+
+        .sidebar-toc {
+            list-style: none;
+            padding: 6px 0 24px;
+            margin: 0;
+            font-size: 9.5pt;
+        }
+        .sidebar-toc li { margin: 0; }
+        .sidebar-toc a {
+            display: block;
+            padding: 6px 14px 6px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .sidebar-toc a:hover {
+            background: var(--row-hover);
+            color: var(--text-primary);
+        }
+        .sidebar-toc a.active {
+            color: var(--title-color);
+            border-left-color: var(--title-color);
+            background: var(--row-hover);
+            font-weight: 600;
+        }
+        .sidebar-toc a.lvl-1 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-top: 10px;
+            font-size: 10pt;
+        }
+        .sidebar-toc a.lvl-2 { padding-left: 30px; }
+        .sidebar-toc a.lvl-3 { padding-left: 46px; font-size: 9pt; color: var(--text-secondary); }
+
+        body { transition: padding-left 0.3s ease, background-color 0.25s ease, color 0.25s ease; }
+        @media (min-width: 1024px) {
+            /* 280px sidebar + 36px gap; right padding so text doesn't hug the edge */
+            body:not(.sidebar-collapsed) { padding-left: 316px; padding-right: 28px; }
+        }
+        @media print {
+            .sidebar, .sidebar-open, .sidebar-close { display: none !important; }
+            body { padding-left: 0 !important; }
+        }
+
+        /* ========== Base Styles ========== */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.95;
+            font-size: 10.5pt;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ========== Cover Page ========== */
+        .cover-page {
+            page: cover;
+            page-break-after: always;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--cover-grad-a) 0%, var(--cover-grad-b) 50%, var(--cover-grad-a) 100%);
+            position: relative;
+            padding: 40px;
+        }
+
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(203, 166, 247, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(243, 139, 168, 0.06) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .cover-decoration {
+            position: absolute;
+            top: 60px;
+            width: 120px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--title-color), transparent);
+            border-radius: 2px;
+        }
+
+        .cover-subtitle {
+            color: var(--accent-blue);
+            font-size: 13pt;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .cover-title {
+            font-size: 32pt;
+            font-weight: 700;
+            color: var(--title-color);
+            margin: 10px 0;
+            line-height: 1.3;
+            text-shadow: 0 0 40px rgba(203, 166, 247, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .cover-title-sub {
+            font-size: 18pt;
+            color: var(--text-primary);
+            margin-top: 15px;
+            font-weight: 400;
+        }
+
+        .cover-divider {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+            margin: 30px auto;
+        }
+
+        .cover-info {
+            color: var(--text-secondary);
+            font-size: 11pt;
+            line-height: 2;
+            margin-top: 20px;
+        }
+
+        .cover-badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--accent-green);
+            font-size: 9pt;
+            margin-top: 30px;
+            letter-spacing: 2px;
+        }
+
+        /* ========== TOC Page ========== */
+        .toc-page {
+            page: toc;
+            page-break-after: always;
+            padding: 20px 10px;
+        }
+
+        .toc-title {
+            font-size: 22pt;
+            color: var(--title-color);
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .toc-item {
+            display: flex;
+            align-items: baseline;
+            margin: 8px 0;
+            font-size: 10.5pt;
+        }
+
+        .toc-chapter {
+            font-size: 12pt;
+            font-weight: 700;
+            color: var(--title-color);
+            margin-top: 18px;
+        }
+
+        .toc-section {
+            padding-left: 25px;
+            color: var(--text-primary);
+        }
+
+        .toc-subsection {
+            padding-left: 50px;
+            color: var(--text-secondary);
+            font-size: 9.5pt;
+        }
+
+        .toc-dots {
+            flex: 1;
+            border-bottom: 1px dotted var(--border-color);
+            margin: 0 8px;
+            min-width: 20px;
+        }
+
+        /* ========== Chapter Styles ========== */
+        .chapter {
+            page-break-before: always;
+            /* Skip layout/paint of off-screen chapters; restore for printing.
+               `auto` keeps the rendered size after first render; fallback is just a hint. */
+            content-visibility: auto;
+            contain-intrinsic-size: auto 40000px;
+        }
+        @media print {
+            .chapter { content-visibility: visible; }
+        }
+
+        .chapter-header {
+            text-align: center;
+            padding: 40px 0 30px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .chapter-number {
+            font-size: 14pt;
+            color: var(--accent-color);
+            letter-spacing: 4px;
+            font-weight: 600;
+        }
+
+        .chapter-title {
+            font-size: 22pt;
+            color: var(--title-color);
+            margin: 10px 0;
+            font-weight: 700;
+        }
+
+        /* ========== Typography ========== */
+        h2 {
+            font-size: 16pt;
+            color: var(--title-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            page-break-after: avoid;
+        }
+
+        h3 {
+            font-size: 13pt;
+            color: var(--accent-blue);
+            margin-top: 25px;
+            margin-bottom: 12px;
+            page-break-after: avoid;
+        }
+
+        h4 {
+            font-size: 11pt;
+            color: var(--accent-green);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+        }
+
+        h5 {
+            font-size: 10.5pt;
+            color: var(--text-primary);
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            page-break-after: avoid;
+        }
+
+        p {
+            margin: 14px 0;
+            text-align: justify;
+            orphans: 3;
+            widows: 3;
+        }
+        li { margin: 6px 0; }
+
+        strong {
+            color: var(--strong-color);
+            font-weight: 600;
+        }
+
+        em {
+            color: var(--accent-color);
+        }
+
+        blockquote {
+            border-left: 4px solid var(--title-color);
+            margin: 15px 0;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-radius: 0 6px 6px 0;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        blockquote p {
+            margin: 5px 0;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin: 25px 0;
+        }
+
+        /* ========== Links ========== */
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        /* ========== Tables ========== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9.5pt;
+            page-break-inside: avoid;
+        }
+
+        th {
+            background: var(--bg-secondary);
+            color: var(--title-color);
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tr:nth-child(even) {
+            background: var(--row-even);
+        }
+
+        tr:hover {
+            background: var(--row-hover);
+        }
+
+        /* ========== Code ========== */
+        code {
+            font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+            background: var(--bg-code);
+            color: var(--accent-green);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9pt;
+            word-break: break-all;
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px 18px;
+            overflow-x: auto;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+
+        pre code {
+            background: none;
+            color: var(--code-text);
+            padding: 0;
+            font-size: 8.5pt;
+            line-height: 1.6;
+            display: block;
+        }
+
+        /* ========== Lists ========== */
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin: 5px 0;
+        }
+
+        li::marker {
+            color: var(--accent-color);
+        }
+
+        /* ========== Math ========== */
+        .katex-display {
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .katex {
+            font-size: 1em;
+        }
+
+        /* ========== Diagram Notes ========== */
+        .diagram-note {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+
+        .diagram-note-title {
+            color: var(--accent-blue);
+            font-weight: bold;
+            font-size: 10pt;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .diagram-content {
+            background: var(--bg-code);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+        }
+
+        /* ========== Special Boxes ========== */
+        .theorem-box {
+            border-left: 4px solid var(--accent-color);
+            background: var(--bg-secondary);
+            padding: 1em 1.2em;
+            margin: 1em 0;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .theorem-title {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5em;
+        }
+
+        /* ========== Print Optimizations ========== */
+        @media print {
+            body {
+                background: var(--bg-primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .chapter {
+                page-break-before: always;
+            }
+
+            pre, table, .diagram-note, blockquote {
+                page-break-inside: avoid;
+            }
+
+            h2, h3, h4 {
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== Sidebar TOC ========== -->
+<button class="sidebar-open" id="sidebarOpen" title="打开目录" aria-label="Open sidebar">≡</button>
+<aside class="sidebar" id="sidebar" aria-label="Table of contents">
+    <div class="sidebar-head">
+        <span class="sidebar-head-title">目录</span>
+        <button class="sidebar-close" id="sidebarClose" title="收起目录" aria-label="Close sidebar">×</button>
+    </div>
+    <a class="sidebar-backlink" href="/notes/" title="返回笔记列表">← 返回笔记列表</a>
+    <ul class="sidebar-toc" id="sidebarToc"></ul>
+</aside>
+<script>
+    (function() {
+        var KEY = 'dp-sidebar-state';
+        var sidebar = document.getElementById('sidebar');
+        var btnOpen = document.getElementById('sidebarOpen');
+        var btnClose = document.getElementById('sidebarClose');
+
+        function setCollapsed(c) {
+            document.body.classList.toggle('sidebar-collapsed', !!c);
+            try { localStorage.setItem(KEY, c ? 'c' : 'o'); } catch(e) {}
+        }
+        var saved = (function(){ try { return localStorage.getItem(KEY); } catch(e) { return null; } })();
+        // default: open on >= 1024px viewports, collapsed on smaller
+        if (saved === 'c') setCollapsed(true);
+        else if (saved === 'o') setCollapsed(false);
+        else setCollapsed(window.innerWidth < 1024);
+
+        btnOpen.addEventListener('click', function() { setCollapsed(false); });
+        btnClose.addEventListener('click', function() { setCollapsed(true); });
+
+        function build() {
+            // deep_principles uses h2 + h3 (skip noisy h1s from code blocks)
+            var headers = Array.prototype.slice.call(document.querySelectorAll('h2, h3'));
+            // Filter: keep only headers whose id is non-empty and whose text isn't a likely code-comment artifact
+            headers = headers.filter(function(h) {
+                var t = h.textContent.trim();
+                if (!t) return false;
+                if (t.length > 80) return false; // unusual chapter titles
+                return true;
+            });
+            var toc = document.getElementById('sidebarToc');
+            var frag = document.createDocumentFragment();
+            headers.forEach(function(h, i) {
+                if (!h.id) h.id = 'h-auto-' + i;
+                var li = document.createElement('li');
+                var a = document.createElement('a');
+                a.href = '#' + h.id;
+                a.textContent = h.textContent.trim();
+                var lvl = h.tagName === 'H2' ? 1 : (h.tagName === 'H3' ? 2 : 3);
+                a.className = 'lvl-' + lvl;
+                a.dataset.target = h.id;
+                a.addEventListener('click', function(e) {
+                    // Override native anchor scroll — content-visibility:auto causes the
+                    // browser to land at the wrong vertical offset because chapter intrinsic
+                    // sizes differ from actual rendered heights. Force-render the section
+                    // first, then scroll, then re-scroll to correct any drift.
+                    e.preventDefault();
+                    var tgt = document.getElementById(a.dataset.target);
+                    if (!tgt) return;
+                    var section = tgt.closest('.chapter');
+                    if (section) {
+                        try { renderMathInElement(section, KATEX_OPTS); } catch(err) {}
+                        if (typeof mermaid !== 'undefined') {
+                            try { mermaid.run({ nodes: section.querySelectorAll('.mermaid:not([data-processed="true"])') }); } catch(err) {}
+                        }
+                    }
+                    history.replaceState(null, '', '#' + a.dataset.target);
+                    tgt.scrollIntoView({ block: 'start' });
+                    setTimeout(function() { tgt.scrollIntoView({ block: 'start' }); }, 250);
+                    if (window.innerWidth < 1024) setCollapsed(true);
+                });
+                li.appendChild(a);
+                frag.appendChild(li);
+            });
+            toc.appendChild(frag);
+
+            // Active section highlight via IntersectionObserver
+            var links = {};
+            toc.querySelectorAll('a').forEach(function(a) { links[a.dataset.target] = a; });
+            var activeId = null;
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        activeId = entry.target.id;
+                    }
+                });
+                Object.keys(links).forEach(function(id) {
+                    links[id].classList.toggle('active', id === activeId);
+                });
+                if (activeId && links[activeId]) {
+                    var rect = links[activeId].getBoundingClientRect();
+                    if (rect.top < 80 || rect.bottom > window.innerHeight - 40) {
+                        links[activeId].scrollIntoView({ block: 'nearest' });
+                    }
+                }
+            }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+            headers.forEach(function(h) { io.observe(h); });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+        else build();
+    })();
+</script>
+
+<!-- ========== Theme Toggle ========== -->
+<button class="theme-toggle" id="themeToggle" title="切换明暗模式" aria-label="Toggle theme">
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
+    </svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/>
+        <line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/>
+        <line x1="2" y1="12" x2="5" y2="12"/>
+        <line x1="19" y1="12" x2="22" y2="12"/>
+        <line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/>
+        <line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/>
+    </svg>
+</button>
+<script>
+    (function() {
+        var KEY = 'dp-theme-mode';
+        var btn = document.getElementById('themeToggle');
+        function apply(mode) {
+            if (mode === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        var saved = (function(){ try { return localStorage.getItem(KEY); } catch(e) { return null; } })();
+        // Default to LIGHT mode for visual consistency with the host site.
+        apply(saved === 'dark' ? 'dark' : 'light');
+        btn.addEventListener('click', function() {
+            var now = document.body.classList.contains('light-mode') ? 'dark' : 'light';
+            apply(now);
+            try { localStorage.setItem(KEY, now); } catch(e) {}
+        });
+    })();
+</script>
+
+<!-- ========== COVER PAGE ========== -->
+<div class="cover-page">
+    <div class="cover-decoration"></div>
+    <div class="cover-subtitle">Distributed Training & Inference Deployment</div>
+    <div class="cover-title">LLM 大规模训练<br/>与部署</div>
+    <div class="cover-title-sub">分布式训练并行 · 推理服务化 · 量化压缩</div>
+    <div class="cover-divider"></div>
+    <div class="cover-info">
+        <p>六大章节 | 训练并行策略 + 推理工程实践</p>
+        <p>DDP · FSDP · Tensor/Pipeline 并行 · ZeRO · vLLM · 量化 · 服务化</p>
+    </div>
+    <div class="cover-badge">系统与工程</div>
+</div>
+
+<!-- ========== TABLE OF CONTENTS ========== -->
+<div class="toc-page">
+    <div class="toc-title">目 录</div>
+    <div class="toc-item toc-chapter">第一章 &nbsp; 数据并行：DP / DDP / FSDP</div>
+    <div class="toc-item toc-section">1.1 &nbsp; 引言：为什么需要并行</div>
+    <div class="toc-item toc-section">1.2 &nbsp; DataParallel 的局限</div>
+    <div class="toc-item toc-section">1.3 &nbsp; DistributedDataParallel 与 AllReduce</div>
+    <div class="toc-item toc-section">1.4 &nbsp; 梯度桶与通信计算重叠</div>
+    <div class="toc-item toc-section">1.5 &nbsp; FSDP：参数、梯度、优化器状态全分片</div>
+    <div class="toc-item toc-section">1.6 &nbsp; 梯度累积与有效批大小</div>
+    <div class="toc-item toc-chapter">第二章 &nbsp; 模型并行：Tensor 与 Pipeline</div>
+    <div class="toc-item toc-section">2.1 &nbsp; 张量并行的基本切分（Megatron-LM）</div>
+    <div class="toc-item toc-section">2.2 &nbsp; Column-Parallel 与 Row-Parallel</div>
+    <div class="toc-item toc-section">2.3 &nbsp; Attention 与 MLP 的并行化</div>
+    <div class="toc-item toc-section">2.4 &nbsp; 流水线并行 GPipe / 1F1B</div>
+    <div class="toc-item toc-section">2.5 &nbsp; 流水线气泡与 Interleaved 调度</div>
+    <div class="toc-item toc-section">2.6 &nbsp; 序列并行（Sequence Parallelism）</div>
+    <div class="toc-item toc-chapter">第三章 &nbsp; ZeRO 与 3D 并行</div>
+    <div class="toc-item toc-section">3.1 &nbsp; 显存占用拆解</div>
+    <div class="toc-item toc-section">3.2 &nbsp; ZeRO Stage 1 / 2 / 3</div>
+    <div class="toc-item toc-section">3.3 &nbsp; ZeRO-Offload 与 ZeRO-Infinity</div>
+    <div class="toc-item toc-section">3.4 &nbsp; 3D 并行的组合与拓扑</div>
+    <div class="toc-item toc-section">3.5 &nbsp; DeepSpeed vs Megatron-LM</div>
+    <div class="toc-item toc-section">3.6 &nbsp; 训练 GPU 数估算公式</div>
+    <div class="toc-item toc-chapter">第四章 &nbsp; 推理服务架构与批处理</div>
+    <div class="toc-item toc-section">4.1 &nbsp; 推理工作流：Prefill 与 Decode</div>
+    <div class="toc-item toc-section">4.2 &nbsp; PagedAttention 与 KV Cache 分页</div>
+    <div class="toc-item toc-section">4.3 &nbsp; 连续批处理（Continuous Batching）</div>
+    <div class="toc-item toc-section">4.4 &nbsp; 投机解码（Speculative Decoding / EAGLE）</div>
+    <div class="toc-item toc-section">4.5 &nbsp; Prefill / Decode 分离部署</div>
+    <div class="toc-item toc-section">4.6 &nbsp; 主流框架对比：vLLM / TGI / SGLang / TensorRT-LLM</div>
+    <div class="toc-item toc-chapter">第五章 &nbsp; 量化与模型压缩</div>
+    <div class="toc-item toc-section">5.1 &nbsp; 量化基础：对称 / 非对称 / 静态 / 动态</div>
+    <div class="toc-item toc-section">5.2 &nbsp; GPTQ：基于二阶信息的逐层量化</div>
+    <div class="toc-item toc-section">5.3 &nbsp; AWQ：激活感知权重量化</div>
+    <div class="toc-item toc-section">5.4 &nbsp; SmoothQuant：激活迁移到权重</div>
+    <div class="toc-item toc-section">5.5 &nbsp; KV Cache 量化（INT8 / FP8）</div>
+    <div class="toc-item toc-section">5.6 &nbsp; 蒸馏、剪枝与结构化稀疏</div>
+    <div class="toc-item toc-chapter">第六章 &nbsp; 生产部署与服务化</div>
+    <div class="toc-item toc-section">6.1 &nbsp; 关键指标：TTFT / TPOT / Throughput</div>
+    <div class="toc-item toc-section">6.2 &nbsp; SLO 设计与吞吐-延迟权衡</div>
+    <div class="toc-item toc-section">6.3 &nbsp; 弹性扩缩容与冷启动</div>
+    <div class="toc-item toc-section">6.4 &nbsp; LLM Gateway 与多模型路由</div>
+    <div class="toc-item toc-section">6.5 &nbsp; 监控、灰度发布与回滚</div>
+    <div class="toc-item toc-section">6.6 &nbsp; 成本估算与优化</div>
+</div>
+
+<!-- ========== CHAPTER 1 ========== -->
+<div class="chapter" id="chapter-1">
+<div class="chapter-header">
+<div class="chapter-number">第 一 章</div>
+<div class="chapter-title">数据并行：DP / DDP / FSDP</div>
+</div>
+
+<h2 id="ch1-intro">1.1 引言：为什么需要并行</h2>
+<p>单卡训练大模型的瓶颈是显存与吞吐。当模型参数量超过单 GPU 显存上限，或单卡训练时间无法接受时，必须把工作切到多卡甚至多机。并行策略主要分三类：<strong>数据并行</strong>（不同 GPU 看不同样本，参数副本相同）、<strong>模型并行</strong>（不同 GPU 持有模型不同部分）、<strong>流水线并行</strong>（不同 GPU 负责不同层）。三者可以正交组合，构成所谓 3D 并行。</p>
+
+<p>数据并行是最常用、最简单、扩展性最好的策略，本章系统讲清三代实现：PyTorch <code>DataParallel</code>（DP，单机多卡，已过时）、<code>DistributedDataParallel</code>（DDP，事实标准）、<code>FullyShardedDataParallel</code>（FSDP，ZeRO-3 的 PyTorch 原生版本）。</p>
+
+<h2 id="ch1-dp-limits">1.2 DataParallel 的局限</h2>
+<p>PyTorch 早期的 <code>nn.DataParallel</code> 将一个 batch 切分到多卡前向，主卡（rank 0）负责聚合损失、反传梯度、广播参数。它的核心问题有四个：</p>
+<ul>
+<li><strong>主卡显存倾斜</strong>：所有梯度先汇聚到主卡再求和，主卡显存压力远大于其他卡。</li>
+<li><strong>GIL 与单进程多线程</strong>：DP 在单进程内用多线程驱动多卡，受 Python GIL 限制，无法跑满硬件。</li>
+<li><strong>每步前向都要广播参数</strong>：浪费带宽。</li>
+<li><strong>不支持跨机</strong>：DP 仅支持单机多卡。</li>
+</ul>
+<p>结论：生产中不要再用 DP，统一用 DDP。</p>
+
+<h2 id="ch1-ddp">1.3 DistributedDataParallel 与 AllReduce</h2>
+<p>DDP 是 <strong>多进程</strong>架构，每张 GPU 对应一个独立进程，每个进程持有完整模型副本，绕开 GIL。前向各算各的，反向时通过 <strong>AllReduce</strong> 把所有进程的梯度求和并平均，保证参数更新一致。</p>
+
+<h3 id="ch1-allreduce-cost">1.3.1 Ring-AllReduce 的通信代价</h3>
+<p>设总参数量 $P$、GPU 数 $N$、每个 float 占 $b$ 字节，Ring-AllReduce 的总通信量约为：</p>
+<p>$$\text{Comm}_{\text{AllReduce}} \approx 2 \cdot \frac{N-1}{N} \cdot P \cdot b \approx 2 P b \quad (N \to \infty)$$</p>
+<p>因为 AllReduce = ReduceScatter + AllGather，两阶段各传 $\tfrac{N-1}{N} P b$。一个关键事实：<strong>通信量与 GPU 数 $N$ 无关</strong>，所以 Ring-AllReduce 在带宽足够时是线性扩展的。但这只是 <em>带宽</em> 维度的好消息——<em>延迟</em> 仍随 $N$ 线性增长，因为环路一圈要走 $2(N-1)$ 步。</p>
+
+<h3 id="ch1-bucket">1.4 梯度桶与通信计算重叠</h3>
+<p>朴素 DDP 每个参数的梯度都触发一次小 AllReduce，开销巨大。PyTorch 用 <strong>gradient bucket</strong>（默认 25 MB）合并相邻反向算出的梯度，凑满一桶后一次性 AllReduce。这一桶 AllReduce 在后台 NCCL stream 上进行，与上游层的反向计算并行执行，理想情况下完全隐藏通信时间。</p>
+
+<pre><code class="language-python">import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+dist.init_process_group(backend="nccl")
+torch.cuda.set_device(local_rank)
+model = MyModel().to(local_rank)
+model = DDP(
+    model,
+    device_ids=[local_rank],
+    bucket_cap_mb=25,                  # 桶大小
+    gradient_as_bucket_view=True,      # 梯度直接用 bucket 视图，省一次拷贝
+    find_unused_parameters=False,      # 关闭可加速；开启会增加一次反向遍历
+)
+</code></pre>
+
+<p>关键调优点：</p>
+<ul>
+<li><strong>桶过大</strong>：通信启动晚，无法与计算重叠；</li>
+<li><strong>桶过小</strong>：每次 AllReduce 启动开销主导，吞吐下降；</li>
+<li><strong>find_unused_parameters</strong>：开启后 DDP 会跑一次反向图扫描标记未用参数，对 MoE 等动态网络必要，但额外开销约 10-20%。</li>
+</ul>
+
+<h2 id="ch1-fsdp">1.5 FSDP：参数、梯度、优化器状态全分片</h2>
+<p>DDP 把参数完整复制到每张卡，显存浪费严重。FSDP（Fully Sharded Data Parallel，对应 DeepSpeed 的 ZeRO-3）把<strong>参数</strong>、<strong>梯度</strong>、<strong>优化器状态</strong>都按 GPU 分片，只在前向/反向需要某层时临时 AllGather 整层参数。</p>
+
+<p>显存对比，模型参数量 $P$，混合精度训练（FP16 参数+FP32 优化器主权重）：</p>
+<table>
+<thead><tr><th>策略</th><th>参数</th><th>梯度</th><th>优化器状态</th><th>合计（fp16/fp32 Adam）</th></tr></thead>
+<tbody>
+<tr><td>DDP</td><td>$2P$ (fp16)</td><td>$2P$ (fp16)</td><td>$12P$ (master+m+v, fp32)</td><td>$16P$ 字节/卡</td></tr>
+<tr><td>FSDP / ZeRO-3</td><td>$2P / N$</td><td>$2P / N$</td><td>$12P / N$</td><td>$16P / N$ 字节/卡</td></tr>
+</tbody>
+</table>
+
+<p>FSDP 的代价是<strong>多了两次通信</strong>：前向前 AllGather、反向后 ReduceScatter，总通信量约 $3Pb$（DDP 是 $2Pb$）。即 1.5× 通信换 $N$× 显存。在显存受限时是绝对值得的。</p>
+
+<pre><code class="language-python">from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+from functools import partial
+
+mp_policy = MixedPrecision(
+    param_dtype=torch.bfloat16,        # 参数与计算用 bf16
+    reduce_dtype=torch.float32,        # 梯度规约用 fp32 防溢出
+    buffer_dtype=torch.bfloat16,
+)
+
+wrap_policy = partial(
+    transformer_auto_wrap_policy,
+    transformer_layer_cls={TransformerBlock},  # 每个 Transformer 层作为一个分片单元
+)
+
+model = FSDP(
+    model,
+    sharding_strategy=ShardingStrategy.FULL_SHARD,   # ZeRO-3
+    mixed_precision=mp_policy,
+    auto_wrap_policy=wrap_policy,
+    device_id=local_rank,
+    limit_all_gathers=True,            # 限制 AllGather 队列深度，省显存
+)
+</code></pre>
+
+<p>FSDP 的 <code>ShardingStrategy</code> 三档：</p>
+<ul>
+<li><code>FULL_SHARD</code>（ZeRO-3）：参数+梯度+优化器都分片；</li>
+<li><code>SHARD_GRAD_OP</code>（ZeRO-2）：只分片梯度和优化器，参数仍完整复制；</li>
+<li><code>NO_SHARD</code>：等同 DDP。</li>
+</ul>
+
+<h2 id="ch1-grad-accum">1.6 梯度累积与有效批大小</h2>
+<p>当单步显存放不下目标 batch size，可以用<strong>梯度累积</strong>把一个大 batch 拆成 $K$ 个 micro-batch，每个 micro-batch 反向出来的梯度累加在 <code>.grad</code> 上但不立即 <code>optimizer.step()</code>，累加 $K$ 次后再统一更新。等效于：</p>
+<p>$$\text{Effective Batch} = \text{micro\_batch} \times \text{DP\_world\_size} \times \text{grad\_accum\_steps}$$</p>
+
+<pre><code class="language-python">for step, batch in enumerate(loader):
+    with model.no_sync() if (step + 1) % K != 0 else nullcontext():
+        loss = model(batch) / K        # 缩放避免梯度爆炸
+        loss.backward()                # 累加到 .grad
+    if (step + 1) % K == 0:
+        optimizer.step()
+        optimizer.zero_grad()
+</code></pre>
+
+<p>关键技巧 <code>model.no_sync()</code>：在累积期间禁用 DDP/FSDP 的梯度同步，只在最后一次反向才触发 AllReduce/ReduceScatter，可以省 $K-1$ 次通信。Hugging Face Trainer 默认就是这种模式。</p>
+
+</div>
+
+<!-- ========== CHAPTER 2 ========== -->
+<div class="chapter" id="chapter-2">
+<div class="chapter-header">
+<div class="chapter-number">第 二 章</div>
+<div class="chapter-title">模型并行：Tensor 与 Pipeline</div>
+</div>
+
+<h2 id="ch2-intro">2.1 张量并行的基本切分（Megatron-LM）</h2>
+<p>当单层参数大到放不进单卡时，必须做<strong>层内切分</strong>，即张量并行（Tensor Parallelism, TP）。最经典的方案来自 NVIDIA Megatron-LM (Shoeybi et al., 2019)，针对 Transformer 的两个核心子层——MLP 和多头注意力——给出了精心设计的切分方式。</p>
+
+<p>设 TP 度为 $t$（即把一层在 $t$ 张卡上切），切分准则是：<strong>同一前向中只在子层结尾做一次 AllReduce</strong>，把中间激活的切分代价压到最低。</p>
+
+<h2 id="ch2-col-row">2.2 Column-Parallel 与 Row-Parallel</h2>
+<p>线性层 $Y = X A$，矩阵 $A \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ 有两种切法：</p>
+
+<h3 id="ch2-col-parallel">2.2.1 列并行（Column-Parallel）</h3>
+<p>把 $A$ 按列切：$A = [A_1, A_2, \ldots, A_t]$，每张卡持有 $A_i \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}/t}$。每张卡独立计算 $Y_i = X A_i$，得到 $Y = [Y_1, \ldots, Y_t]$ 的拼接。<strong>前向无通信</strong>，但输出是切分的。</p>
+
+<h3 id="ch2-row-parallel">2.2.2 行并行（Row-Parallel）</h3>
+<p>把 $A$ 按行切：$A = [A_1; A_2; \ldots; A_t]$，输入也必须切分 $X = [X_1, \ldots, X_t]$。每张卡算 $Y_i = X_i A_i$，最后<strong>AllReduce</strong> 求和得到完整 $Y = \sum_i X_i A_i$。前向需要一次 AllReduce。</p>
+
+<h3 id="ch2-col-row-combine">2.2.3 组合：先列后行</h3>
+<p>Megatron 的关键 trick：MLP 的第一个线性层用列并行（输出切分），紧接的 GeLU 是逐元素的可以直接在切分上算，第二个线性层用行并行（输入是切分的，正好对接）。<strong>整个 MLP 只在最后一次 AllReduce</strong>：</p>
+<p>$$X \xrightarrow{\text{Col}} [Y_1, \ldots, Y_t] \xrightarrow{\text{GeLU}} [Z_1, \ldots, Z_t] \xrightarrow{\text{Row}} \sum_i Z_i B_i \xrightarrow{\text{AllReduce}} \text{Output}$$</p>
+
+<h2 id="ch2-attn">2.3 Attention 与 MLP 的并行化</h2>
+<p>多头注意力天然适合按 <strong>head 维度</strong>切：把 $h$ 个 head 平均分到 $t$ 张卡，每卡负责 $h/t$ 个头。$Q, K, V$ 的投影矩阵列并行切，每个头独立算 attention，输出投影行并行汇总。同样只在子层结尾一次 AllReduce。</p>
+
+<p>反向时同样需要一次 AllReduce（梯度对应），所以一层 Transformer 前+反共 4 次 AllReduce（MLP 一次正一次反，Attention 一次正一次反）。设隐藏维 $h$、序列长 $s$、micro-batch 大小 $b$，单次 AllReduce 通信量 $\sim 2bsh$（输出激活），总通信量约：</p>
+<p>$$\text{Comm}_{\text{TP,1 layer}} \approx 4 \cdot \frac{t-1}{t} \cdot 2bsh \cdot \text{bytes}$$</p>
+
+<p>关键：TP 通信量与<strong>激活</strong>成正比，与参数量无关。这与 DDP 的 AllReduce（与参数成正比）正交，互补。</p>
+
+<h2 id="ch2-pipeline">2.4 流水线并行 GPipe / 1F1B</h2>
+<p>当层数远超 TP 切分能力时，把不同<strong>层</strong>放到不同 GPU 上，构成流水线并行（Pipeline Parallelism, PP）。挑战是：原始的串行训练会让 GPU 大部分时间在等上游/下游，利用率极低。</p>
+
+<h3 id="ch2-gpipe">2.4.1 GPipe（朴素流水线）</h3>
+<p>把一个 mini-batch 拆成 $m$ 个 micro-batch，前向阶段连续把 $m$ 个 micro-batch 灌入流水线，等所有前向完成再统一反向。设 PP 度 $p$（即流水线深度）、单 stage 时间 $t$：</p>
+<p>$$T_{\text{GPipe}} = (m + p - 1) \cdot t \cdot 2 \quad\text{（前向+反向）}$$</p>
+<p>气泡（GPU 空闲）比例：</p>
+<p>$$\text{Bubble Fraction} = \frac{p - 1}{m + p - 1}$$</p>
+<p>典型实践 $m = 4p \sim 8p$，气泡率约 11%~20%。</p>
+
+<h3 id="ch2-1f1b">2.4.2 1F1B（PipeDream / Megatron）</h3>
+<p>GPipe 的问题是反向阶段所有 stage 的前向激活必须存满，显存占用 $O(m)$。1F1B 调度让<strong>每个 stage 在前向后立刻反向</strong>（One-Forward-One-Backward），最多只需要保留 $p$ 个 micro-batch 的激活：</p>
+<p>$$\text{Activation Mem} = O(p) \cdot \text{per micro-batch}$$</p>
+<p>气泡率与 GPipe 相同，但显存大幅降低。Megatron-LM 默认就是 1F1B。</p>
+
+<h2 id="ch2-interleaved">2.5 流水线气泡与 Interleaved 调度</h2>
+<p>Interleaved 1F1B（Megatron, Narayanan et al., 2021）把每张 GPU 的层数再分成 $v$ 个虚拟 stage，让 GPU 在多个虚拟 stage 间交替执行。气泡率降至：</p>
+<p>$$\text{Bubble} = \frac{1}{v} \cdot \frac{p - 1}{m + p - 1}$$</p>
+<p>$v = 2$ 即可把气泡减半。代价是通信次数从 $p$ 增至 $p \cdot v$，需要更低延迟的链路（NVLink/NVSwitch 上很值，跨节点 InfiniBand 上得权衡）。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">graph LR
+    subgraph "1F1B Pipeline (p=4 stages, m=8 microbatches)"
+        direction LR
+        S1["Stage 1<br/>F1 F2 F3 F4 B1 F5 B2 F6 B3 ..."]
+        S2["Stage 2<br/>... F1 F2 F3 B1 F4 B2 ..."]
+        S3["Stage 3<br/>... ... F1 F2 B1 F3 ..."]
+        S4["Stage 4<br/>... ... ... F1 B1 F2 ..."]
+        S1 --> S2 --> S3 --> S4
+    end
+</pre></div>
+
+<h2 id="ch2-seq-parallel">2.6 序列并行（Sequence Parallelism）</h2>
+<p>TP 把激活按特征维 $h$ 切了，但 LayerNorm 和 Dropout 仍持有完整激活（因为 LN 涉及 $h$ 维统计，不能在 $h$ 切的副本上算）。激活显存占比可达 25%。<strong>序列并行</strong>（Korthikanti et al., 2022）把这些层的激活沿<strong>序列维 $s$</strong> 切，与 TP 的特征切互补，整层激活全切：</p>
+<p>$$\text{Act Mem per GPU} = \text{Layer Acts} \cdot \frac{1}{t} \quad \text{(seq + tensor)} $$</p>
+<p>代价是 TP 的 AllReduce 换成 ReduceScatter+AllGather（通信量相同），不增加通信量但需要额外同步点。Megatron-LM 的现代版本默认开启。</p>
+
+</div>
+
+<!-- ========== CHAPTER 3 ========== -->
+<div class="chapter" id="chapter-3">
+<div class="chapter-header">
+<div class="chapter-number">第 三 章</div>
+<div class="chapter-title">ZeRO 与 3D 并行</div>
+</div>
+
+<h2 id="ch3-memory">3.1 显存占用拆解</h2>
+<p>分析任何并行策略，第一步要算清楚单卡显存账。混合精度训练（Adam，主流）下，参数量 $P$ 个的模型，<strong>每个参数</strong>占用：</p>
+<table>
+<thead><tr><th>项</th><th>精度</th><th>字节/参数</th></tr></thead>
+<tbody>
+<tr><td>FP16 / BF16 参数</td><td>fp16</td><td>2</td></tr>
+<tr><td>FP16 梯度</td><td>fp16</td><td>2</td></tr>
+<tr><td>FP32 主权重（Adam 更新用）</td><td>fp32</td><td>4</td></tr>
+<tr><td>Adam $m$（一阶动量）</td><td>fp32</td><td>4</td></tr>
+<tr><td>Adam $v$（二阶动量）</td><td>fp32</td><td>4</td></tr>
+<tr><td colspan="2"><strong>合计</strong></td><td><strong>16</strong></td></tr>
+</tbody>
+</table>
+<p>所以 7B 模型纯训练态显存约 $7 \times 10^9 \times 16 = 112 \text{ GB}$，再加激活、临时 buffer，单 80GB H100 也放不下。</p>
+
+<p>激活显存的估算（前向中所有层中间结果）：</p>
+<p>$$M_{\text{act}} \approx s \cdot b \cdot L \cdot (34 h + 5 a s) \text{ bytes}$$</p>
+<p>其中 $s$ 序列长、$b$ batch、$L$ 层数、$h$ 隐藏维、$a$ 注意力头数（Korthikanti 2022 公式）。激活检查点（gradient checkpointing）可以把这项降到 $\sqrt{L}$ 量级，代价是反向多算 33%。</p>
+
+<h2 id="ch3-zero">3.2 ZeRO Stage 1 / 2 / 3</h2>
+<p>ZeRO（Rajbhandari et al., 2020）的核心思想：DDP 让每张卡持有相同的 16P 字节是冗余的，可以按 GPU 数 $N$ 分片。三个 stage 分别分片不同部分：</p>
+
+<table>
+<thead><tr><th>Stage</th><th>分片对象</th><th>单卡显存（混合精度 Adam）</th><th>额外通信</th></tr></thead>
+<tbody>
+<tr><td>0 (DDP)</td><td>无</td><td>$16P$</td><td>$2P$ AllReduce</td></tr>
+<tr><td>1</td><td>优化器状态（$m, v$, master weights）</td><td>$4P + 12P/N$</td><td>$2P$</td></tr>
+<tr><td>2</td><td>+ 梯度</td><td>$2P + 14P/N$</td><td>$2P$</td></tr>
+<tr><td>3</td><td>+ 参数（FSDP）</td><td>$16P/N$</td><td>$3P$（AllGather+ReduceScatter+AllGather）</td></tr>
+</tbody>
+</table>
+
+<p>Stage 1/2 的关键好处是<strong>通信量不增加</strong>（仍是 $2P$，只是把 AllReduce 改成 ReduceScatter），但显存大幅下降。Stage 3 需要额外的 AllGather 来重组参数做前向，所以通信量从 $2P$ 涨到 $3P$，1.5× 代价换 $N$× 显存。</p>
+
+<h2 id="ch3-offload">3.3 ZeRO-Offload 与 ZeRO-Infinity</h2>
+<p>当 GPU 还是放不下，ZeRO-Offload（Ren et al., 2021）把<strong>优化器状态和梯度</strong>卸载到 CPU 内存，CPU 做 Adam 更新（CPU 慢但够用，因为 step 频率低）。GPU 显存进一步降到 $\sim 2P$（仅参数）。</p>
+
+<p>ZeRO-Infinity（Rajbhandari et al., 2021）更进一步，把参数也卸载到 CPU 甚至 NVMe SSD，配合 PCIe/NVMe 带宽预取。可以在 8 张 V100 上训练万亿参数模型，但训练吞吐显著下降（IO 成为瓶颈），主要用在<strong>无 H100 集群</strong>的场景。</p>
+
+<pre><code class="language-json">{
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {"device": "cpu", "pin_memory": true},
+        "offload_param":     {"device": "cpu", "pin_memory": true},
+        "overlap_comm": true,
+        "contiguous_gradients": true,
+        "reduce_bucket_size": 1e8,
+        "stage3_prefetch_bucket_size": 5e7,
+        "stage3_param_persistence_threshold": 1e6
+    },
+    "bf16": {"enabled": true},
+    "gradient_accumulation_steps": 8,
+    "train_micro_batch_size_per_gpu": 1
+}
+</code></pre>
+
+<h2 id="ch3-3d">3.4 3D 并行的组合与拓扑</h2>
+<p>三种并行可以正交组合：$N_{\text{GPU}} = \text{DP} \times \text{TP} \times \text{PP}$。一个典型 1024 卡 训练 175B 模型的配置：</p>
+<ul>
+<li><strong>TP = 8</strong>：限制在<strong>单节点内</strong>（NVLink 600 GB/s 带宽），跨节点会被 IB 拖死</li>
+<li><strong>PP = 16</strong>：跨节点，每节点持有 $L/16$ 层</li>
+<li><strong>DP = 8</strong>：剩下的维度做数据并行（带 ZeRO-1 进一步省显存）</li>
+</ul>
+
+<p>选型经验法则：</p>
+<ul>
+<li>TP 度 $\leq$ 节点内 GPU 数（NVLink 域），避免穿越 InfiniBand</li>
+<li>PP micro-batch 数 $m \geq 4 \times \text{PP}$ 以摊薄气泡</li>
+<li>DP 维度配合 ZeRO 决定显存</li>
+<li>对训练前 token < 1T 的中小模型，PP 通常不值得，DP + TP + ZeRO 就够</li>
+</ul>
+
+<h2 id="ch3-vs">3.5 DeepSpeed vs Megatron-LM</h2>
+<table>
+<thead><tr><th>维度</th><th>DeepSpeed</th><th>Megatron-LM</th></tr></thead>
+<tbody>
+<tr><td>主要创新</td><td>ZeRO 系列（显存分片）</td><td>张量并行 + 1F1B 流水线</td></tr>
+<tr><td>易用性</td><td>JSON 配置，Hugging Face Trainer 集成</td><td>需要改模型代码（替换为并行版 layer）</td></tr>
+<tr><td>极限规模</td><td>用 Offload 可推到万亿</td><td>需要 3D 组合，需手工调拓扑</td></tr>
+<tr><td>典型场景</td><td>10B 以下、显存受限</td><td>100B+、需 TP/PP</td></tr>
+</tbody>
+</table>
+<p>实践中常见的<strong>Megatron-DeepSpeed</strong> 组合：用 Megatron 的 TP+PP，用 DeepSpeed 的 ZeRO-1 做 DP，取两者之长。</p>
+
+<h2 id="ch3-gpu-est">3.6 训练 GPU 数估算公式</h2>
+<p>训练总计算量（前向+反向 ≈ 3 倍前向）：</p>
+<p>$$C = 6 \cdot P \cdot D \quad \text{FLOPs}$$</p>
+<p>$P$ 参数量，$D$ 训练 token 数。一张 H100 的 BF16 算力 989 TFLOPS，实际利用率（MFU, Model FLOPs Utilization）通常 30%~50%。训练时间：</p>
+<p>$$T_{\text{days}} = \frac{6 P D}{N \cdot \text{MFU} \cdot 989 \times 10^{12} \cdot 86400}$$</p>
+
+<p>例：70B 模型，2T token，MFU = 45%，512 张 H100：</p>
+<p>$$T = \frac{6 \times 7 \times 10^{10} \times 2 \times 10^{12}}{512 \times 0.45 \times 989 \times 10^{12} \times 86400} \approx 42 \text{ 天}$$</p>
+
+<p>这个公式是 BD/采购对话的硬通货，记住。</p>
+
+</div>
+
+<!-- ========== CHAPTER 4 ========== -->
+<div class="chapter" id="chapter-4">
+<div class="chapter-header">
+<div class="chapter-number">第 四 章</div>
+<div class="chapter-title">推理服务架构与批处理</div>
+</div>
+
+<h2 id="ch4-prefill-decode">4.1 推理工作流：Prefill 与 Decode</h2>
+<p>LLM 推理可清晰地分为两个阶段，二者的计算特性完全不同：</p>
+<ul>
+<li><strong>Prefill</strong>：处理 prompt（长度 $L_p$ token），一次 forward 出整个序列的 KV，建立 KV Cache，最后一个位置出第一个 token。<strong>计算密集</strong>（compute-bound），约 $2 L_p \cdot P$ FLOPs。</li>
+<li><strong>Decode</strong>：自回归生成，每步只算一个新 token，但需要读取整个 KV Cache。<strong>访存密集</strong>（memory-bound），算术强度 $\sim 1/2$，受 HBM 带宽限制。</li>
+</ul>
+<p>这个不对称是后续所有调度优化的根因：prefill 想攒大 batch 跑满算力，decode 想最小化 KV Cache 读取。</p>
+
+<h2 id="ch4-paged-attention">4.2 PagedAttention 与 KV Cache 分页</h2>
+<p>传统实现给每个序列预分配一块连续 KV Cache（按最大长度 $S_{\max}$），导致严重的<strong>内部碎片</strong>（实际生成长度往往远短于 $S_{\max}$）和<strong>外部碎片</strong>（不同序列长度差异大）。vLLM (Kwon et al., 2023) 提出 PagedAttention，把 KV Cache 切成固定大小的 <strong>block</strong>（典型 16 token），用一张<strong>页表</strong>（block table）映射逻辑块到物理块，效仿操作系统虚拟内存：</p>
+<p>$$\text{Mem Utilization}_{\text{naive}} \approx 30\%, \quad \text{Mem Utilization}_{\text{paged}} \approx 96\%$$</p>
+
+<p>关键收益：</p>
+<ul>
+<li><strong>无内部碎片</strong>：按需分配，最多浪费 block size - 1 token</li>
+<li><strong>共享 prefix</strong>：beam search、parallel sampling、system prompt 共享时直接共享 block，写时复制（CoW）。例如 GPT 多采样 $n=4$，prompt 部分的 KV 只存一份。</li>
+<li><strong>带来的代价</strong>：attention kernel 必须支持非连续访问（需要 custom CUDA kernel）。</li>
+</ul>
+
+<h2 id="ch4-continuous-batching">4.3 连续批处理（Continuous Batching）</h2>
+<p>静态批处理（static batching）等所有序列生成完再返回——长序列拖死整批，GPU 利用率惨。<strong>连续批处理</strong>（也叫 in-flight batching，Yu et al., 2022 / Orca）让每一步 decode 都可以替换已完成的序列：</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">sequenceDiagram
+    participant S as Scheduler
+    participant Q as Pending Queue
+    participant E as Execution Batch
+    loop Each iteration
+        S->>Q: pull new requests
+        S->>E: evict completed sequences
+        S->>E: add new prefill / continue decode
+        E->>E: one forward step
+        E->>S: emit tokens, mark finished
+    end
+</pre></div>
+
+<p>实际工程要点：</p>
+<ul>
+<li><strong>Prefill / Decode 混合调度</strong>：新请求的 prefill 是 compute-heavy 长任务，会阻塞 decode 的 latency。常见做法是限制每步混入的 prefill token 总数（vLLM 的 <code>max_num_batched_tokens</code>）。</li>
+<li><strong>抢占与重计算</strong>：显存不够时，把低优先级序列的 KV Cache 暂时回收（recompute on demand 或 swap to CPU）。</li>
+<li><strong>Chunked Prefill</strong>：把长 prompt 的 prefill 切成多块，每块大小与 decode batch token 量级匹配，避免长 prompt 一次性吃掉整步。</li>
+</ul>
+
+<h2 id="ch4-speculative">4.4 投机解码（Speculative Decoding / EAGLE）</h2>
+<p>核心观察：decode 是 memory-bound，每步从 HBM 读完整模型权重生成 1 token，计算单元闲置。若能用<strong>小 draft 模型</strong>预测出 $k$ 个候选 token，再让大模型一次 forward 同时<strong>验证</strong>这 $k$ 个，就可以一次步进出多个 token，分摊 HBM 读取。</p>
+
+<p>Leviathan et al. (2022) 证明：只要 draft 模型的接受率 $\alpha$ 不为零，每步期望生成 token 数</p>
+<p>$$\mathbb{E}[\text{tokens per step}] = \frac{1 - \alpha^{k+1}}{1 - \alpha}$$</p>
+<p>且<strong>输出分布与原模型严格等价</strong>（拒绝采样保证）。典型加速 2~3×。</p>
+
+<p>新一代方案：</p>
+<ul>
+<li><strong>Medusa</strong>（Cai et al., 2024）：直接训多个 head 同时预测后续 token，省掉独立 draft 模型。</li>
+<li><strong>EAGLE / EAGLE-2</strong>（Li et al., 2024）：用 target 模型的倒数第二层 hidden state 输入 draft head，效率更高。Llama-3-70B 上稳定 3× 加速。</li>
+<li><strong>Lookahead Decoding</strong>：通过 Jacobi 迭代直接在 target 模型上做并行采样，免训练。</li>
+</ul>
+
+<h2 id="ch4-disagg">4.5 Prefill / Decode 分离部署</h2>
+<p>把 prefill 和 decode 调度到<strong>不同的 GPU 池</strong>，因为两阶段的最优配置不同：</p>
+<table>
+<thead><tr><th>阶段</th><th>瓶颈</th><th>最优 TP</th><th>最优 batch</th><th>典型卡型</th></tr></thead>
+<tbody>
+<tr><td>Prefill</td><td>compute</td><td>高（TP=4-8）</td><td>小（甚至 1）</td><td>H100/H200（强算力）</td></tr>
+<tr><td>Decode</td><td>memory bandwidth</td><td>低（TP=1-2）</td><td>大（128+）</td><td>L40S/A10（性价比 HBM）</td></tr>
+</tbody>
+</table>
+<p>代表系统：<strong>DistServe</strong>（Zhong et al., 2024）、<strong>Mooncake</strong>（Moonshot 2024）、<strong>SplitWise</strong>（Patel et al., 2024）。代价是 KV Cache 必须从 prefill GPU 转给 decode GPU（RDMA 传输），约 100 μs/MB，大模型场景值得。</p>
+
+<h2 id="ch4-frameworks">4.6 主流框架对比</h2>
+<table>
+<thead><tr><th>框架</th><th>厂商</th><th>核心特性</th><th>适用场景</th></tr></thead>
+<tbody>
+<tr><td><strong>vLLM</strong></td><td>UC Berkeley</td><td>PagedAttention，开源生态最完整</td><td>开源模型自托管，研究/创业</td></tr>
+<tr><td><strong>TGI</strong></td><td>Hugging Face</td><td>HF 模型零配置接入</td><td>HF 模型快速 demo</td></tr>
+<tr><td><strong>SGLang</strong></td><td>UC Berkeley / xAI</td><td>RadixAttention（prefix tree 共享），结构化输出</td><td>多 turn、共享 prompt 场景</td></tr>
+<tr><td><strong>TensorRT-LLM</strong></td><td>NVIDIA</td><td>编译优化最深，与 Triton 集成</td><td>纯 NVIDIA 栈、极致性能</td></tr>
+<tr><td><strong>LMDeploy</strong></td><td>InternLM</td><td>TurboMind 内核，AWQ 量化优秀</td><td>低显存部署、中文模型</td></tr>
+</tbody>
+</table>
+<p>2024-2025 的快速参考：研究/原型 选 vLLM；生产高吞吐 + NVIDIA 栈选 TensorRT-LLM；多 turn 重共享 prompt 选 SGLang。</p>
+
+</div>
+
+<!-- ========== CHAPTER 5 ========== -->
+<div class="chapter" id="chapter-5">
+<div class="chapter-header">
+<div class="chapter-number">第 五 章</div>
+<div class="chapter-title">量化与模型压缩</div>
+</div>
+
+<h2 id="ch5-basics">5.1 量化基础：对称 / 非对称 / 静态 / 动态</h2>
+<p>量化的目的是用低精度整数表示原本的 FP16/BF16 张量，省显存、加快矩阵乘（Tensor Core 对 INT8/INT4 吞吐是 FP16 的 2×/4×）。基本映射：</p>
+<p>$$q = \text{round}\!\left(\frac{x}{s}\right) + z, \qquad x \approx s(q - z)$$</p>
+<p>其中 $s$ 是 scale，$z$ 是 zero-point。$z=0$ 称<strong>对称量化</strong>，适合分布零中心化的权重；$z\neq 0$ 是<strong>非对称量化</strong>，适合像 ReLU 后激活那样偏向一侧的分布。</p>
+
+<p>按 scale 来源又分：</p>
+<ul>
+<li><strong>静态量化</strong>：用 calibration set 离线统计 $s, z$，推理时固定。激活也用静态 scale，<strong>无运行时开销</strong>，但对分布偏移敏感。</li>
+<li><strong>动态量化</strong>：激活的 $s, z$ 推理时按每个 batch 重新计算。无需 calibration，但每次有少量额外开销。常用于 NLP 的权重 INT8 + 激活 dynamic。</li>
+</ul>
+
+<p>粒度（granularity）：</p>
+<ul>
+<li><strong>per-tensor</strong>：整个张量一个 scale。最快但精度损失大。</li>
+<li><strong>per-channel</strong>：权重每列（或每行）一个 scale。LLM 权重量化几乎必选。</li>
+<li><strong>per-group / per-block</strong>：每 128 个元素一组，GPTQ/AWQ 标配，是精度与开销的甜点。</li>
+</ul>
+
+<h2 id="ch5-gptq">5.2 GPTQ：基于二阶信息的逐层量化</h2>
+<p>GPTQ (Frantar et al., 2022) 借鉴 Optimal Brain Surgeon 思想：把量化每一列权重视作一次"删除"，用 Hessian 信息补偿剩余列。对线性层 $Y = XW$，目标是最小化输出误差：</p>
+<p>$$\min_{\hat W} \| X W - X \hat W \|_F^2$$</p>
+<p>$\hat W$ 是量化后权重。逐列贪心求解，量化第 $i$ 列时把误差按 $H^{-1}$（$H = 2 X^\top X$）补偿到后续未量化列：</p>
+<p>$$\delta W_{j} = -\frac{w_i - \text{quant}(w_i)}{[H^{-1}]_{ii}} \cdot [H^{-1}]_{ij}, \quad j > i$$</p>
+
+<p>关键工程优化：使用 Cholesky 分解一次性算出 $H^{-1}$ 的上三角，避免数值不稳定；group_size=128 配合 act-order，可以把 4-bit 量化 perplexity 损失压到 0.1 以内。Llama-2-70B GPTQ 4-bit 显存从 140 GB 降到 35 GB，单 A100 可推。</p>
+
+<h2 id="ch5-awq">5.3 AWQ：激活感知权重量化</h2>
+<p>AWQ (Lin et al., 2023) 的关键观察：<strong>权重 outlier 不重要，激活 outlier 才重要</strong>。某些通道（约 1%）的激活幅度极大，量化其对应的权重时引入的误差被激活放大。解决方案：在量化前给这些通道的权重乘一个缩放 $s_i$，对应激活除以 $s_i$，数学上等价，但缩放后的权重更易量化：</p>
+<p>$$Y = (X \cdot \text{diag}(s)^{-1}) \cdot (\text{diag}(s) \cdot W) = X W$$</p>
+<p>缩放因子 $s_i$ 通过对每通道激活幅值的统计搜索得到，典型 $s_i = (|\bar x_i|)^\alpha$，$\alpha$ 在 [0.5, 1.0] 网格搜索。AWQ 对指令微调模型友好，量化损失常优于 GPTQ。</p>
+
+<h2 id="ch5-smoothquant">5.4 SmoothQuant：激活迁移到权重</h2>
+<p>SmoothQuant (Xiao et al., 2022) 同样针对激活 outlier 问题，但目标是<strong>W8A8</strong>（权重和激活都 INT8）。它在<strong>每个 LayerNorm 后</strong>插入一个对角缩放，把激活的难量化"迁移"给权重：</p>
+<p>$$\hat X = X \cdot \text{diag}(s)^{-1}, \quad \hat W = \text{diag}(s) \cdot W$$</p>
+<p>$s$ 同样按激活通道幅值搜索。代价是这些缩放可以折叠进前一个 LayerNorm 的 $\gamma$ 参数（数学等价），运行时<strong>零开销</strong>。这一性质让 SmoothQuant 成为 INT8 服务端推理的事实标准。</p>
+
+<h2 id="ch5-kv-quant">5.5 KV Cache 量化（INT8 / FP8）</h2>
+<p>长上下文场景下 KV Cache 显存占比超过权重。Llama-2-70B 在 32K 上下文、batch=8 时，KV Cache 显存：</p>
+<p>$$\text{KV Mem} = 2 \cdot L \cdot s \cdot h \cdot 2 \cdot b = 2 \times 80 \times 32768 \times 8192 \times 2 \times 8 / 10^9 \approx 686 \text{ GB}$$</p>
+<p>显然要量化。INT8 KV Cache（per-token + per-head scale）几乎零精度损失；INT4 需要更精心的 group 设计，长上下文可能掉 1-2 分。H100 起原生支持 FP8，是性价比最好的选择（Hopper 架构 FP8 算力比 BF16 快 2×，且无需 zero-point）。</p>
+
+<p>实现要点：</p>
+<ul>
+<li>scale 通常 per-head 计算（attention head 间分布差异大）</li>
+<li>K 和 V 分布特性不同，K 更接近正态、V 更长尾，可以用不同位宽</li>
+<li>kernel 需要支持"读 INT8 KV 时反量化到 BF16 算 attention"，vLLM/TRT-LLM 都已实现</li>
+</ul>
+
+<h2 id="ch5-distill">5.6 蒸馏、剪枝与结构化稀疏</h2>
+<h3 id="ch5-distill-detail">5.6.1 蒸馏</h3>
+<p>知识蒸馏：让小学生模型 $S$ 模仿大教师 $T$ 的输出分布。最经典的 KD loss：</p>
+<p>$$\mathcal{L} = \alpha \cdot \text{CE}(y, p_S) + (1 - \alpha) \cdot T^2 \cdot \text{KL}(p_T^{/T} \,\|\, p_S^{/T})$$</p>
+<p>$T$ 是温度。LLM 蒸馏的现代变体（MiniLLM, GKD）改用反向 KL 或 on-policy 数据避免 mode-covering 问题。</p>
+
+<h3 id="ch5-prune">5.6.2 剪枝</h3>
+<ul>
+<li><strong>非结构化剪枝</strong>（unstructured）：把绝对值小的权重置零，理论 90% 稀疏度可行，但硬件难加速（除非用 NVIDIA 2:4 稀疏 Tensor Core）。</li>
+<li><strong>2:4 半结构化稀疏</strong>：每 4 个权重保留 2 个非零，Ampere/Hopper 原生加速 2×。SparseGPT (Frantar &amp; Alistarh, 2023) 提供 one-shot 算法。</li>
+<li><strong>结构化剪枝</strong>：删掉整个 head / 整层 / 整通道。LLM-Pruner、Sheared LLaMA 等。可以叠加蒸馏恢复精度。</li>
+</ul>
+
+<h3 id="ch5-techstack">5.6.3 量化-蒸馏-剪枝组合</h3>
+<p>生产流水线：<strong>预训练 → 剪枝（结构化）→ 蒸馏恢复 → INT4 量化 → 部署</strong>。Llama-3-8B 经此组合可压到 2.5 GB，跑在手机端。代表项目：Llama.cpp 生态的 Q4_K_M 量化、Apple MLX 框架。</p>
+
+</div>
+
+<!-- ========== CHAPTER 6 ========== -->
+<div class="chapter" id="chapter-6">
+<div class="chapter-header">
+<div class="chapter-number">第 六 章</div>
+<div class="chapter-title">生产部署与服务化</div>
+</div>
+
+<h2 id="ch6-metrics">6.1 关键指标：TTFT / TPOT / Throughput</h2>
+<p>LLM 服务的指标体系：</p>
+<table>
+<thead><tr><th>指标</th><th>含义</th><th>影响</th></tr></thead>
+<tbody>
+<tr><td><strong>TTFT</strong> (Time To First Token)</td><td>从请求到达至吐出第一个 token 的时间</td><td>用户感知"系统是否还活着"，prefill 决定</td></tr>
+<tr><td><strong>TPOT</strong> (Time Per Output Token)</td><td>之后每个 token 的平均生成时间</td><td>用户感知"打字流畅度"，decode 决定</td></tr>
+<tr><td><strong>ITL</strong> (Inter-Token Latency)</td><td>相邻 token 之间的间隔（含波动）</td><td>用户感知"卡顿"，体现尾延迟</td></tr>
+<tr><td><strong>Throughput</strong></td><td>单位时间处理的 token / 请求数</td><td>成本与并发能力</td></tr>
+<tr><td><strong>Goodput</strong></td><td>满足 SLO 的 throughput</td><td>真实可用容量</td></tr>
+</tbody>
+</table>
+<p>用户体验阈值经验值：TTFT &lt; 1 秒 体感即时，TPOT 对应阅读速度 &gt; 30 token/s 即流畅（中文每 token 约 1-2 字）。Code / agent 类应用对 TTFT 更敏感。</p>
+
+<h2 id="ch6-slo">6.2 SLO 设计与吞吐-延迟权衡</h2>
+<p>SLO（Service Level Objective）通常以 P95 / P99 表达，比如"P95 TTFT &lt; 500 ms"。在固定硬件下，<strong>批大小 (batch size) 是延迟与吞吐的旋钮</strong>：</p>
+<p>$$\text{Throughput} \uparrow, \quad \text{Latency} \uparrow \quad \text{as batch size} \uparrow$$</p>
+<p>每张 GPU 找一个最大 batch 使得 P95 TTFT 仍满足 SLO，然后通过加机器扩并发。一个实用的<strong>断点估算</strong>：当 KV Cache 占据全部可用显存的 90% 时，加 batch 不再提升 throughput（开始抢占重计算），此时即"满 batch"。</p>
+
+<p>常见反模式：</p>
+<ul>
+<li>用静态 batch + 最大 batch 上限做 SLO 配置——长序列会拖垮 batch，导致短请求 tail latency 暴涨。<strong>必须用 continuous batching</strong>。</li>
+<li>把 max_tokens 设很大——会延长占用 KV Cache 的时间。生产环境应该按业务区分上限。</li>
+</ul>
+
+<h2 id="ch6-autoscale">6.3 弹性扩缩容与冷启动</h2>
+<p>LLM 服务扩缩容比一般 web 服务难得多，原因：</p>
+<ul>
+<li><strong>权重加载慢</strong>：70B 模型 BF16 即 140 GB，从对象存储拉过来需要 5-15 分钟（甚至更久）。冷启动几乎不能"按需"。</li>
+<li><strong>K8s HPA 默认指标（CPU/QPS）不准</strong>：应该用 GPU 利用率 + KV Cache 占用率 + 等待队列深度组合。</li>
+<li><strong>抢占重启代价高</strong>：进行中的请求若被驱逐，要么转移要么从头开始，体验极差。</li>
+</ul>
+
+<p>常用模式：</p>
+<ul>
+<li><strong>预热池 (warm pool)</strong>：维持 N 个加载好权重的 pod，按 50% headroom 计算</li>
+<li><strong>分层模型缓存</strong>：本地 NVMe 缓存权重，启动从本地读（HF Hub → local NVMe 一次性）</li>
+<li><strong>渐进式扩容</strong>：检测到 P95 TTFT 突破阈值就触发扩容，但下限低（如 5 分钟一次），防止抖动</li>
+<li><strong>多模型 GPU 共享</strong>：MIG / vGPU 切分，把小模型挤一张卡，提高利用率</li>
+</ul>
+
+<h2 id="ch6-gateway">6.4 LLM Gateway 与多模型路由</h2>
+<p>真实业务通常同时跑十几个模型（不同尺寸、不同微调版本、不同语言），需要一层<strong>网关</strong>统一接入。核心能力：</p>
+<ul>
+<li><strong>统一 API</strong>：兼容 OpenAI 接口，业务方零改造切换模型</li>
+<li><strong>智能路由</strong>：按延迟 SLO、prompt 复杂度、cost 选择模型（如简单问题路给 8B，复杂任务路给 70B）</li>
+<li><strong>限流与配额</strong>：按 token、按 RPM、按租户分配</li>
+<li><strong>降级</strong>：上游模型超时/异常时，路由到备用模型</li>
+<li><strong>请求合并</strong>：高 QPS 下把同源请求合并入同一批（已被 continuous batching 实现，gateway 层只需保证亲和性）</li>
+</ul>
+
+<p>代表系统：LiteLLM、Portkey、Anyscale Endpoint。自建可基于 Envoy + 自定义 filter。</p>
+
+<h2 id="ch6-monitoring">6.5 监控、灰度发布与回滚</h2>
+<p>LLM 服务需要监控的指标远多于传统服务：</p>
+
+<table>
+<thead><tr><th>类别</th><th>指标</th></tr></thead>
+<tbody>
+<tr><td><strong>性能</strong></td><td>TTFT / TPOT / ITL（P50/P95/P99），throughput, goodput, GPU util, HBM util, KV Cache 占用</td></tr>
+<tr><td><strong>容量</strong></td><td>每个 worker 的 batch size、active sequences、waiting queue depth</td></tr>
+<tr><td><strong>错误</strong></td><td>超时率、OOM、抢占重计算次数、连接重置</td></tr>
+<tr><td><strong>业务</strong></td><td>平均回答 token 数、stop reason 分布、token 成本</td></tr>
+<tr><td><strong>质量</strong></td><td>refusal 率、JSON 格式合规率、A/B 模型 head-to-head 评分</td></tr>
+</tbody>
+</table>
+
+<p>灰度发布的工程模式：</p>
+<ol>
+<li><strong>影子流量</strong>（shadow）：新模型只读取请求、不返回，对比输出</li>
+<li><strong>按租户灰度</strong>：1% 用户 → 5% → 20% → 50% → 100%</li>
+<li><strong>关键样本回放</strong>：维护一组 golden prompt（含 jailbreak、边界 case），每次发布前自动跑</li>
+<li><strong>自动回滚触发器</strong>：业务错误率、refusal 率、P95 延迟任一指标恶化超 X% 即自动回滚</li>
+</ol>
+
+<h2 id="ch6-cost">6.6 成本估算与优化</h2>
+<p>以 H100（约 $4/小时云租）跑 Llama-3-70B BF16 为例：</p>
+<p>$$\text{Cost per 1M tokens} = \frac{N_{\text{GPU}} \cdot \$/\text{hr}}{3600 \cdot \text{throughput}_{\text{tok/s}}} \cdot 10^6$$</p>
+<p>4 张 H100 TP=4 部署，throughput ~3000 token/s（混合 prefill/decode），则：</p>
+<p>$$\frac{4 \times 4}{3600 \times 3000} \times 10^6 \approx \$1.48 \text{ / 1M tokens}$$</p>
+
+<p>降本的杠杆（按 ROI 从高到低）：</p>
+<ol>
+<li><strong>INT8/FP8 量化</strong>：throughput 1.8~2.5×，几乎无质量损失</li>
+<li><strong>continuous batching</strong>：相对静态 batch 提升 5-10×（基础设施级，必须做）</li>
+<li><strong>Prefix Cache / Prompt Cache</strong>：长系统 prompt 跨请求共享，节省 prefill 算力</li>
+<li><strong>投机解码</strong>：decode 阶段 2-3×</li>
+<li><strong>Prefill/Decode 分离</strong>：长 prompt 业务可省 30-50% 成本</li>
+<li><strong>小模型路由</strong>：80% 简单请求路给 8B，整体均摊成本下降一个量级</li>
+<li><strong>蒸馏一个专用小模型</strong>：业务收敛后训自家小模型，比开源大模型 + prompt 便宜 10×</li>
+</ol>
+
+<p>2024-2025 的趋势：从"上 GPT-4"过渡到"自家蒸馏小模型 + 路由到大模型 fallback"。一个好的 LLM 系统工程师的核心价值，是把每 1000 token 的成本压到业务能承受的水平。</p>
+
+</div>
+
+</body>
+</html>

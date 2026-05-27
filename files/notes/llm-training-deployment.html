@@ -1032,8 +1032,8 @@
     <div class="cover-title-sub">分布式训练并行 · 推理服务化 · 量化压缩</div>
     <div class="cover-divider"></div>
     <div class="cover-info">
-        <p>六大章节 | 训练并行策略 + 推理工程实践</p>
-        <p>DDP · FSDP · Tensor/Pipeline 并行 · ZeRO · vLLM · 量化 · 服务化</p>
+        <p>六大章节 | 训练并行 + 推理工程 + 部署服务化</p>
+        <p>DDP · FSDP · Tensor/Pipeline · ZeRO · vLLM · 量化 · Gateway</p>
     </div>
     <div class="cover-badge">系统与工程</div>
 </div>
@@ -1045,44 +1045,74 @@
     <div class="toc-item toc-section">1.1 &nbsp; 引言：为什么需要并行</div>
     <div class="toc-item toc-section">1.2 &nbsp; DataParallel 的局限</div>
     <div class="toc-item toc-section">1.3 &nbsp; DistributedDataParallel 与 AllReduce</div>
+    <div class="toc-item toc-subsection">1.3.1 &nbsp; Ring-AllReduce 的通信代价</div>
+    <div class="toc-item toc-subsection">1.3.2 &nbsp; NCCL 后端与拓扑感知</div>
     <div class="toc-item toc-section">1.4 &nbsp; 梯度桶与通信计算重叠</div>
-    <div class="toc-item toc-section">1.5 &nbsp; FSDP：参数、梯度、优化器状态全分片</div>
+    <div class="toc-item toc-section">1.5 &nbsp; FSDP：全分片</div>
+    <div class="toc-item toc-subsection">1.5.1 &nbsp; 显存对比</div>
+    <div class="toc-item toc-subsection">1.5.2 &nbsp; 实现要点</div>
+    <div class="toc-item toc-subsection">1.5.3 &nbsp; 包装单元 (wrap unit) 选择</div>
     <div class="toc-item toc-section">1.6 &nbsp; 梯度累积与有效批大小</div>
+    <div class="toc-item toc-section">1.7 &nbsp; 决策树</div>
+
     <div class="toc-item toc-chapter">第二章 &nbsp; 模型并行：Tensor 与 Pipeline</div>
     <div class="toc-item toc-section">2.1 &nbsp; 张量并行的基本切分（Megatron-LM）</div>
     <div class="toc-item toc-section">2.2 &nbsp; Column-Parallel 与 Row-Parallel</div>
+    <div class="toc-item toc-subsection">2.2.1 &nbsp; 列并行</div>
+    <div class="toc-item toc-subsection">2.2.2 &nbsp; 行并行</div>
+    <div class="toc-item toc-subsection">2.2.3 &nbsp; 组合：先列后行</div>
     <div class="toc-item toc-section">2.3 &nbsp; Attention 与 MLP 的并行化</div>
+    <div class="toc-item toc-subsection">2.3.1 &nbsp; TP 通信代价对比例算例</div>
     <div class="toc-item toc-section">2.4 &nbsp; 流水线并行 GPipe / 1F1B</div>
     <div class="toc-item toc-section">2.5 &nbsp; 流水线气泡与 Interleaved 调度</div>
-    <div class="toc-item toc-section">2.6 &nbsp; 序列并行（Sequence Parallelism）</div>
+    <div class="toc-item toc-section">2.6 &nbsp; 序列并行与 Context Parallel</div>
+
     <div class="toc-item toc-chapter">第三章 &nbsp; ZeRO 与 3D 并行</div>
     <div class="toc-item toc-section">3.1 &nbsp; 显存占用拆解</div>
+    <div class="toc-item toc-subsection">3.1.1 &nbsp; 激活显存的估算</div>
     <div class="toc-item toc-section">3.2 &nbsp; ZeRO Stage 1 / 2 / 3</div>
+    <div class="toc-item toc-subsection">3.2.1 &nbsp; 实践选型</div>
     <div class="toc-item toc-section">3.3 &nbsp; ZeRO-Offload 与 ZeRO-Infinity</div>
     <div class="toc-item toc-section">3.4 &nbsp; 3D 并行的组合与拓扑</div>
     <div class="toc-item toc-section">3.5 &nbsp; DeepSpeed vs Megatron-LM</div>
     <div class="toc-item toc-section">3.6 &nbsp; 训练 GPU 数估算公式</div>
+    <div class="toc-item toc-subsection">3.6.1 &nbsp; MFU 实测与诊断</div>
+
     <div class="toc-item toc-chapter">第四章 &nbsp; 推理服务架构与批处理</div>
     <div class="toc-item toc-section">4.1 &nbsp; 推理工作流：Prefill 与 Decode</div>
+    <div class="toc-item toc-subsection">4.1.1 &nbsp; Roofline 分析</div>
     <div class="toc-item toc-section">4.2 &nbsp; PagedAttention 与 KV Cache 分页</div>
-    <div class="toc-item toc-section">4.3 &nbsp; 连续批处理（Continuous Batching）</div>
-    <div class="toc-item toc-section">4.4 &nbsp; 投机解码（Speculative Decoding / EAGLE）</div>
+    <div class="toc-item toc-subsection">4.2.1 &nbsp; Prefix Cache 与 RadixAttention</div>
+    <div class="toc-item toc-section">4.3 &nbsp; 连续批处理</div>
+    <div class="toc-item toc-subsection">4.3.1 &nbsp; 准入控制与显存压力</div>
+    <div class="toc-item toc-section">4.4 &nbsp; 投机解码 (Speculative / EAGLE)</div>
+    <div class="toc-item toc-subsection">4.4.1 &nbsp; 接受率与加速比关系</div>
     <div class="toc-item toc-section">4.5 &nbsp; Prefill / Decode 分离部署</div>
-    <div class="toc-item toc-section">4.6 &nbsp; 主流框架对比：vLLM / TGI / SGLang / TensorRT-LLM</div>
+    <div class="toc-item toc-section">4.6 &nbsp; 主流框架对比</div>
+    <div class="toc-item toc-subsection">4.6.1 &nbsp; 性能对比基准</div>
+
     <div class="toc-item toc-chapter">第五章 &nbsp; 量化与模型压缩</div>
-    <div class="toc-item toc-section">5.1 &nbsp; 量化基础：对称 / 非对称 / 静态 / 动态</div>
-    <div class="toc-item toc-section">5.2 &nbsp; GPTQ：基于二阶信息的逐层量化</div>
-    <div class="toc-item toc-section">5.3 &nbsp; AWQ：激活感知权重量化</div>
-    <div class="toc-item toc-section">5.4 &nbsp; SmoothQuant：激活迁移到权重</div>
-    <div class="toc-item toc-section">5.5 &nbsp; KV Cache 量化（INT8 / FP8）</div>
-    <div class="toc-item toc-section">5.6 &nbsp; 蒸馏、剪枝与结构化稀疏</div>
+    <div class="toc-item toc-section">5.1 &nbsp; 量化基础</div>
+    <div class="toc-item toc-subsection">5.1.1 &nbsp; 比特位与精度权衡</div>
+    <div class="toc-item toc-section">5.2 &nbsp; GPTQ：基于二阶信息</div>
+    <div class="toc-item toc-section">5.3 &nbsp; AWQ：激活感知</div>
+    <div class="toc-item toc-section">5.4 &nbsp; SmoothQuant</div>
+    <div class="toc-item toc-subsection">5.4.1 &nbsp; 三方法对比</div>
+    <div class="toc-item toc-section">5.5 &nbsp; KV Cache 量化</div>
+    <div class="toc-item toc-section">5.6 &nbsp; 蒸馏、剪枝与稀疏</div>
+    <div class="toc-item toc-subsection">5.6.4 &nbsp; 压缩决策清单</div>
+
     <div class="toc-item toc-chapter">第六章 &nbsp; 生产部署与服务化</div>
-    <div class="toc-item toc-section">6.1 &nbsp; 关键指标：TTFT / TPOT / Throughput</div>
-    <div class="toc-item toc-section">6.2 &nbsp; SLO 设计与吞吐-延迟权衡</div>
-    <div class="toc-item toc-section">6.3 &nbsp; 弹性扩缩容与冷启动</div>
+    <div class="toc-item toc-section">6.1 &nbsp; 关键指标 TTFT/TPOT</div>
+    <div class="toc-item toc-section">6.2 &nbsp; SLO 设计</div>
+    <div class="toc-item toc-section">6.3 &nbsp; 弹性扩缩容</div>
     <div class="toc-item toc-section">6.4 &nbsp; LLM Gateway 与多模型路由</div>
+    <div class="toc-item toc-subsection">6.4.1 &nbsp; 智能路由的决策算法</div>
     <div class="toc-item toc-section">6.5 &nbsp; 监控、灰度发布与回滚</div>
+    <div class="toc-item toc-subsection">6.5.1 &nbsp; 质量监控的挑战</div>
     <div class="toc-item toc-section">6.6 &nbsp; 成本估算与优化</div>
+    <div class="toc-item toc-subsection">6.6.1 &nbsp; 部署方案成本对比</div>
+    <div class="toc-item toc-section">6.7 &nbsp; 生产清单</div>
 </div>
 
 <!-- ========== CHAPTER 1 ========== -->
@@ -1093,30 +1123,97 @@
 </div>
 
 <h2 id="ch1-intro">1.1 引言：为什么需要并行</h2>
-<p>单卡训练大模型的瓶颈是显存与吞吐。当模型参数量超过单 GPU 显存上限，或单卡训练时间无法接受时，必须把工作切到多卡甚至多机。并行策略主要分三类：<strong>数据并行</strong>（不同 GPU 看不同样本，参数副本相同）、<strong>模型并行</strong>（不同 GPU 持有模型不同部分）、<strong>流水线并行</strong>（不同 GPU 负责不同层）。三者可以正交组合，构成所谓 3D 并行。</p>
+<p>训练一个语言模型本质上是用大量样本估计参数。单卡训练大模型的瓶颈是两件事——<strong>显存</strong>放不下、<strong>吞吐</strong>跑不完。当模型参数量超过单 GPU 显存上限（即便上了梯度检查点和混合精度也放不下），或单卡训练完所需时间无法接受（动辄几个月），必须把工作切到多卡甚至多机。</p>
 
-<p>数据并行是最常用、最简单、扩展性最好的策略，本章系统讲清三代实现：PyTorch <code>DataParallel</code>（DP，单机多卡，已过时）、<code>DistributedDataParallel</code>（DDP，事实标准）、<code>FullyShardedDataParallel</code>（FSDP，ZeRO-3 的 PyTorch 原生版本）。</p>
+<p>分布式训练的并行策略主要分三类：</p>
+<ul>
+<li><strong>数据并行（Data Parallelism, DP）</strong>：不同 GPU 看不同样本，每张卡上的模型参数副本相同，反向后通过 AllReduce 同步梯度。</li>
+<li><strong>模型并行（Model / Tensor Parallelism, TP）</strong>：把一层的参数张量切到多卡，每张卡持有模型的一部分。</li>
+<li><strong>流水线并行（Pipeline Parallelism, PP）</strong>：不同 GPU 负责模型不同层，micro-batch 在 GPU 间流动。</li>
+</ul>
+
+<p>三者可以正交组合，构成 3D 并行：<strong>$N_{\text{GPU}} = \text{DP} \times \text{TP} \times \text{PP}$</strong>。本章先讲扩展性最好、最易上手、最常用的<strong>数据并行</strong>，串起三代实现：PyTorch <code>DataParallel</code>（DP，单机多卡，已过时）、<code>DistributedDataParallel</code>（DDP，事实标准）、<code>FullyShardedDataParallel</code>（FSDP，ZeRO-3 的 PyTorch 原生版本）。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Strategies["三种并行策略"]
+        direction TB
+        DP["Data Parallel&lt;br/&gt;同一参数副本&lt;br/&gt;不同 batch slice"]
+        TP["Tensor Parallel&lt;br/&gt;同一层切到多卡&lt;br/&gt;层内通信密集"]
+        PP["Pipeline Parallel&lt;br/&gt;不同层在不同卡&lt;br/&gt;流水线气泡"]
+    end
+    DP -.正交.- TP
+    TP -.正交.- PP
+    DP -.正交.- PP
+    Strategies --&gt; D3["3D 并行&lt;br/&gt;N_GPU = DP x TP x PP"]
+</pre></div>
 
 <h2 id="ch1-dp-limits">1.2 DataParallel 的局限</h2>
 <p>PyTorch 早期的 <code>nn.DataParallel</code> 将一个 batch 切分到多卡前向，主卡（rank 0）负责聚合损失、反传梯度、广播参数。它的核心问题有四个：</p>
 <ul>
-<li><strong>主卡显存倾斜</strong>：所有梯度先汇聚到主卡再求和，主卡显存压力远大于其他卡。</li>
-<li><strong>GIL 与单进程多线程</strong>：DP 在单进程内用多线程驱动多卡，受 Python GIL 限制，无法跑满硬件。</li>
+<li><strong>主卡显存倾斜</strong>：所有梯度先汇聚到主卡再求和，主卡显存压力远大于其他卡，常常先 OOM。</li>
+<li><strong>GIL 与单进程多线程</strong>：DP 在单进程内用多线程驱动多卡，受 Python GIL 限制，无法跑满硬件。实测 4 卡加速比通常 &lt; 3×。</li>
 <li><strong>每步前向都要广播参数</strong>：浪费带宽。</li>
-<li><strong>不支持跨机</strong>：DP 仅支持单机多卡。</li>
+<li><strong>不支持跨机</strong>：DP 仅支持单机多卡，超过 8 张就无能为力。</li>
 </ul>
-<p>结论：生产中不要再用 DP，统一用 DDP。</p>
+<p>结论：生产中不要再用 DP，统一用 DDP。PyTorch 官方文档也明确不推荐。</p>
 
 <h2 id="ch1-ddp">1.3 DistributedDataParallel 与 AllReduce</h2>
-<p>DDP 是 <strong>多进程</strong>架构，每张 GPU 对应一个独立进程，每个进程持有完整模型副本，绕开 GIL。前向各算各的，反向时通过 <strong>AllReduce</strong> 把所有进程的梯度求和并平均，保证参数更新一致。</p>
+<p>DDP 是 <strong>多进程</strong>架构——每张 GPU 对应一个独立 Python 进程，每个进程持有完整模型副本，绕开 GIL。前向各算各的，反向时通过 <strong>AllReduce</strong> 把所有进程的梯度求和并平均，保证参数更新一致。</p>
 
-<h3 id="ch1-allreduce-cost">1.3.1 Ring-AllReduce 的通信代价</h3>
-<p>设总参数量 $P$、GPU 数 $N$、每个 float 占 $b$ 字节，Ring-AllReduce 的总通信量约为：</p>
-<p>$$\text{Comm}_{\text{AllReduce}} \approx 2 \cdot \frac{N-1}{N} \cdot P \cdot b \approx 2 P b \quad (N \to \infty)$$</p>
-<p>因为 AllReduce = ReduceScatter + AllGather，两阶段各传 $\tfrac{N-1}{N} P b$。一个关键事实：<strong>通信量与 GPU 数 $N$ 无关</strong>，所以 Ring-AllReduce 在带宽足够时是线性扩展的。但这只是 <em>带宽</em> 维度的好消息——<em>延迟</em> 仍随 $N$ 线性增长，因为环路一圈要走 $2(N-1)$ 步。</p>
+<h3 id="ch1-ring">1.3.1 Ring-AllReduce 的通信代价</h3>
+<p>朴素 AllReduce 让所有节点把数据发给一个聚合节点再广播回来，总通信量 $2(N-1)Pb$，且聚合节点带宽成瓶颈。<strong>Ring-AllReduce</strong>（Baidu, 2017）把所有 GPU 排成环，分两阶段：</p>
+<ol>
+<li><strong>ReduceScatter</strong>：把数组切成 $N$ 份，每个 GPU 负责一份的归约。沿环走 $N-1$ 步，每步发送 $P/N$ 大小的数据。</li>
+<li><strong>AllGather</strong>：每个 GPU 把自己持有的归约结果传给后续邻居，再走 $N-1$ 步。</li>
+</ol>
+<p>总通信量：</p>
+<p>$$\text{Comm}_{\text{AllReduce}} = 2 \cdot \frac{N-1}{N} \cdot P \cdot b \approx 2 P b \quad (N \to \infty)$$</p>
 
-<h3 id="ch1-bucket">1.4 梯度桶与通信计算重叠</h3>
-<p>朴素 DDP 每个参数的梯度都触发一次小 AllReduce，开销巨大。PyTorch 用 <strong>gradient bucket</strong>（默认 25 MB）合并相邻反向算出的梯度，凑满一桶后一次性 AllReduce。这一桶 AllReduce 在后台 NCCL stream 上进行，与上游层的反向计算并行执行，理想情况下完全隐藏通信时间。</p>
+<p>关键事实：<strong>通信量与 GPU 数 $N$ 无关</strong>，所以 Ring-AllReduce 在带宽足够时是线性扩展的。但这只是带宽维度的好消息——<strong>延迟</strong>仍随 $N$ 线性增长，环路一圈要走 $2(N-1)$ 步。所以 Ring 在小集群（&lt; 16 GPU）效率最高；大集群常用 <strong>Tree-AllReduce</strong> 或 <strong>NCCL 的 Double Binary Tree</strong> 把延迟降到 $O(\log N)$。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Ring["Ring-AllReduce on 4 GPUs"]
+        direction LR
+        G0["GPU0&lt;br/&gt;shard a"]
+        G1["GPU1&lt;br/&gt;shard b"]
+        G2["GPU2&lt;br/&gt;shard c"]
+        G3["GPU3&lt;br/&gt;shard d"]
+        G0 --&gt;|step 1| G1
+        G1 --&gt;|step 2| G2
+        G2 --&gt;|step 3| G3
+        G3 --&gt;|step 4| G0
+    end
+    note["每步只发 P/N 数据&lt;br/&gt;2(N-1) 步完成 ReduceScatter+AllGather&lt;br/&gt;总通信约 2Pb，与 N 无关"]
+    Ring -.- note
+</pre></div>
+
+<h3 id="ch1-nccl">1.3.2 NCCL 后端与拓扑感知</h3>
+<p>实际通信由 NVIDIA NCCL 库执行。NCCL 在初始化时自动探测节点内 NVLink/NVSwitch、节点间 InfiniBand/RoCE 拓扑，构造最优环：</p>
+<ul>
+<li><strong>节点内</strong>：H100 NVLink 第四代 600 GB/s 单向，远胜 PCIe Gen5 的 64 GB/s。所以 TP 优先放节点内。</li>
+<li><strong>节点间</strong>：InfiniBand HDR 200 Gbps、NDR 400 Gbps。DDP 的 AllReduce 在 InfiniBand 上仍可线性扩展（带宽够用）。</li>
+<li><strong>多环并行</strong>：NCCL 会同时启多个环（双环、四环）打满 NVLink 双向带宽。</li>
+</ul>
+<p>排查通信问题最有用的环境变量：<code>NCCL_DEBUG=INFO</code>、<code>NCCL_TOPO_DUMP_FILE=topo.xml</code>、<code>NCCL_IB_DISABLE=1</code>（关 IB 用 TCP 兜底）。</p>
+
+<h2 id="ch1-bucket">1.4 梯度桶与通信计算重叠</h2>
+<p>朴素 DDP 每个参数的梯度都触发一次小 AllReduce，开销巨大（NCCL 启动延迟约 10 μs/调用）。PyTorch 用 <strong>gradient bucket</strong>（默认 25 MB）合并相邻反向算出的梯度，凑满一桶后一次性 AllReduce。这一桶 AllReduce 在后台 NCCL stream 上进行，<strong>与上游层的反向计算并行执行</strong>，理想情况下完全隐藏通信时间。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">sequenceDiagram
+    participant L as Layers (bwd order)
+    participant B as Bucket
+    participant N as NCCL stream
+    L->>B: dL/dW_n (last layer)
+    L->>B: dL/dW_(n-1)
+    Note over B: 桶 1 凑满 25 MB
+    B->>N: AllReduce(bucket 1)
+    L->>B: dL/dW_(n-2)
+    L->>B: dL/dW_(n-3)
+    Note over L,N: 计算与通信重叠
+    B->>N: AllReduce(bucket 2)
+    L->>B: dL/dW_1 (first layer)
+    B->>N: AllReduce(last bucket)
+</pre></div>
 
 <pre><code class="language-python">import torch
 import torch.distributed as dist
@@ -1131,6 +1228,7 @@ model = DDP(
     bucket_cap_mb=25,                  # 桶大小
     gradient_as_bucket_view=True,      # 梯度直接用 bucket 视图，省一次拷贝
     find_unused_parameters=False,      # 关闭可加速；开启会增加一次反向遍历
+    static_graph=True,                 # 训练图不变时启用，可让 DDP 进一步优化通信
 )
 </code></pre>
 
@@ -1138,23 +1236,27 @@ model = DDP(
 <ul>
 <li><strong>桶过大</strong>：通信启动晚，无法与计算重叠；</li>
 <li><strong>桶过小</strong>：每次 AllReduce 启动开销主导，吞吐下降；</li>
-<li><strong>find_unused_parameters</strong>：开启后 DDP 会跑一次反向图扫描标记未用参数，对 MoE 等动态网络必要，但额外开销约 10-20%。</li>
+<li><strong>find_unused_parameters</strong>：开启后 DDP 会跑一次反向图扫描标记未用参数，对 MoE 等动态网络必要，但额外开销约 10-20%；</li>
+<li><strong>static_graph=True</strong>：训练图固定（推荐绝大多数场景）时让 DDP 把通信调度图缓存下来，特别有助于配合 PP；</li>
+<li><strong>broadcast_buffers</strong>：BN running stats 等 buffer 是否每步同步——大模型有 LayerNorm 但 LN 没 running stats，可以关掉。</li>
 </ul>
 
 <h2 id="ch1-fsdp">1.5 FSDP：参数、梯度、优化器状态全分片</h2>
 <p>DDP 把参数完整复制到每张卡，显存浪费严重。FSDP（Fully Sharded Data Parallel，对应 DeepSpeed 的 ZeRO-3）把<strong>参数</strong>、<strong>梯度</strong>、<strong>优化器状态</strong>都按 GPU 分片，只在前向/反向需要某层时临时 AllGather 整层参数。</p>
 
-<p>显存对比，模型参数量 $P$，混合精度训练（FP16 参数+FP32 优化器主权重）：</p>
+<h3 id="ch1-fsdp-memory">1.5.1 显存对比</h3>
+<p>模型参数量 $P$，混合精度训练（FP16 / BF16 计算 + FP32 主权重 + Adam $m,v$）：</p>
 <table>
-<thead><tr><th>策略</th><th>参数</th><th>梯度</th><th>优化器状态</th><th>合计（fp16/fp32 Adam）</th></tr></thead>
+<thead><tr><th>策略</th><th>参数</th><th>梯度</th><th>优化器状态</th><th>合计</th></tr></thead>
 <tbody>
 <tr><td>DDP</td><td>$2P$ (fp16)</td><td>$2P$ (fp16)</td><td>$12P$ (master+m+v, fp32)</td><td>$16P$ 字节/卡</td></tr>
 <tr><td>FSDP / ZeRO-3</td><td>$2P / N$</td><td>$2P / N$</td><td>$12P / N$</td><td>$16P / N$ 字节/卡</td></tr>
 </tbody>
 </table>
 
-<p>FSDP 的代价是<strong>多了两次通信</strong>：前向前 AllGather、反向后 ReduceScatter，总通信量约 $3Pb$（DDP 是 $2Pb$）。即 1.5× 通信换 $N$× 显存。在显存受限时是绝对值得的。</p>
+<p>代价：<strong>多了两次通信</strong>。FSDP 一次前向需要 AllGather 整层参数（一次），反向需要 AllGather 一次 + ReduceScatter 梯度一次。总通信量约 $3Pb$（DDP 是 $2Pb$）。即 1.5× 通信换 $N$× 显存。在显存受限时是绝对值得的。</p>
 
+<h3 id="ch1-fsdp-impl">1.5.2 实现要点</h3>
 <pre><code class="language-python">from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
@@ -1178,30 +1280,68 @@ model = FSDP(
     auto_wrap_policy=wrap_policy,
     device_id=local_rank,
     limit_all_gathers=True,            # 限制 AllGather 队列深度，省显存
+    use_orig_params=True,              # 必开，否则 optimizer 看到的不是原参数对象
+    backward_prefetch=BackwardPrefetch.BACKWARD_PRE,  # 反向前预取下一层参数
 )
 </code></pre>
 
-<p>FSDP 的 <code>ShardingStrategy</code> 三档：</p>
+<p>FSDP 的 <code>ShardingStrategy</code> 四档：</p>
 <ul>
-<li><code>FULL_SHARD</code>（ZeRO-3）：参数+梯度+优化器都分片；</li>
-<li><code>SHARD_GRAD_OP</code>（ZeRO-2）：只分片梯度和优化器，参数仍完整复制；</li>
-<li><code>NO_SHARD</code>：等同 DDP。</li>
+<li><code>FULL_SHARD</code>（ZeRO-3）：参数+梯度+优化器都分片；最省显存，通信最重</li>
+<li><code>SHARD_GRAD_OP</code>（ZeRO-2）：只分片梯度和优化器，参数仍完整复制；通信量与 DDP 同</li>
+<li><code>NO_SHARD</code>：等同 DDP</li>
+<li><code>HYBRID_SHARD</code>（最新）：节点内 FULL_SHARD，节点间 NO_SHARD —— NVLink 上做参数分片，节点间走 AllReduce。是 H100 集群的实用甜点。</li>
 </ul>
 
+<h3 id="ch1-wrap">1.5.3 包装单元 (wrap unit) 选择</h3>
+<p>FSDP 把模型拆成若干 wrap unit，每个 unit 内的参数一起 AllGather/ReduceScatter。Unit 越细：</p>
+<ul>
+<li>显存峰值越低（同时只 AllGather 一个 unit 的参数）</li>
+<li>通信启动次数越多，吞吐降低</li>
+</ul>
+<p>实践默认：<strong>每个 Transformer 层一个 unit</strong>（用 <code>transformer_auto_wrap_policy</code>）。对于 70B+ 模型，每层参数大约 200 MB～500 MB，平衡得最好。</p>
+
 <h2 id="ch1-grad-accum">1.6 梯度累积与有效批大小</h2>
-<p>当单步显存放不下目标 batch size，可以用<strong>梯度累积</strong>把一个大 batch 拆成 $K$ 个 micro-batch，每个 micro-batch 反向出来的梯度累加在 <code>.grad</code> 上但不立即 <code>optimizer.step()</code>，累加 $K$ 次后再统一更新。等效于：</p>
+<p>当单步显存放不下目标 batch size，可以用<strong>梯度累积</strong>把一个大 batch 拆成 $K$ 个 micro-batch，每个 micro-batch 反向出来的梯度累加在 <code>.grad</code> 上但不立即 <code>optimizer.step()</code>，累加 $K$ 次后再统一更新：</p>
 <p>$$\text{Effective Batch} = \text{micro\_batch} \times \text{DP\_world\_size} \times \text{grad\_accum\_steps}$$</p>
 
 <pre><code class="language-python">for step, batch in enumerate(loader):
-    with model.no_sync() if (step + 1) % K != 0 else nullcontext():
+    is_last_micro = (step + 1) % K == 0
+    sync_ctx = nullcontext() if is_last_micro else model.no_sync()
+    with sync_ctx:
         loss = model(batch) / K        # 缩放避免梯度爆炸
         loss.backward()                # 累加到 .grad
-    if (step + 1) % K == 0:
+    if is_last_micro:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
 </code></pre>
 
 <p>关键技巧 <code>model.no_sync()</code>：在累积期间禁用 DDP/FSDP 的梯度同步，只在最后一次反向才触发 AllReduce/ReduceScatter，可以省 $K-1$ 次通信。Hugging Face Trainer 默认就是这种模式。</p>
+
+<p><strong>常见陷阱</strong>：</p>
+<ul>
+<li>忘记 <code>loss / K</code>：累加后梯度幅度是单步的 $K$ 倍，学习率等效变大 $K$ 倍。除以 $K$ 即可。</li>
+<li>BatchNorm：BN 的 running stats 是按 micro-batch 累计的，与"一次大 batch"统计不等价。LLM 用 LayerNorm 无此问题。</li>
+<li>梯度裁剪要在 <code>step()</code> 之前、累加完成之后调用，不要在每个 micro-batch 调。</li>
+</ul>
+
+<h2 id="ch1-summary">1.7 决策树</h2>
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TD
+    Start[选择数据并行策略] --&gt; Q1{模型放得下单卡?}
+    Q1 --&gt;|放得下| Q2{多机训练?}
+    Q1 --&gt;|放不下| Q3{显存差多少?}
+    Q2 --&gt;|单机| DDP1[DDP 即可]
+    Q2 --&gt;|多机| DDP2[DDP + NCCL InfiniBand]
+    Q3 --&gt;|差 2-4x| FSDP2[FSDP SHARD_GRAD_OP&lt;br/&gt;ZeRO-2]
+    Q3 --&gt;|差 4x以上| FSDP3[FSDP FULL_SHARD&lt;br/&gt;ZeRO-3]
+    Q3 --&gt;|远超 N倍| OFF[ZeRO-Offload&lt;br/&gt;+ HYBRID_SHARD]
+    DDP1 --&gt; Done[训练 OK]
+    DDP2 --&gt; Done
+    FSDP2 --&gt; Done
+    FSDP3 --&gt; Done
+    OFF --&gt; Done
+</pre></div>
 
 </div>
 
@@ -1217,11 +1357,43 @@ model = FSDP(
 
 <p>设 TP 度为 $t$（即把一层在 $t$ 张卡上切），切分准则是：<strong>同一前向中只在子层结尾做一次 AllReduce</strong>，把中间激活的切分代价压到最低。</p>
 
+<p>为什么数据并行不够？考虑 175B 模型，混合精度训练每卡至少需要 $16P = 2.8$ TB 显存（按之前推导）。即使 FSDP 全分片到 1024 卡，每卡仍要 2.7 GB 参数 + 同等梯度+优化器，但<strong>单层</strong>的最大矩阵（GPT-3 是 $12288 \times 12288 \times 4 = 600$ MB 一层）放进单卡时，AllGather 整层参数的瞬时显存峰值就吃不消。<strong>TP 让单层永远不需要在单卡上完整存在</strong>，从根本上解决"一层太大"的问题。</p>
+
 <h2 id="ch2-col-row">2.2 Column-Parallel 与 Row-Parallel</h2>
-<p>线性层 $Y = X A$，矩阵 $A \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ 有两种切法：</p>
+<p>线性层 $Y = X A$，矩阵 $A \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ 有两种切法。理解这两种切法的对偶性是 Megatron 设计的核心。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    subgraph Col["Column-Parallel: Y = X A, A 按列切"]
+        direction LR
+        X1["X (batch, d_in)<br/>完整复制到每张卡"]
+        X1 --&gt; M1["GPU0: X · A_1<br/>= Y_1 (d_out/t)"]
+        X1 --&gt; M2["GPU1: X · A_2<br/>= Y_2 (d_out/t)"]
+        X1 --&gt; M3["GPU2: X · A_3<br/>= Y_3 (d_out/t)"]
+        M1 --&gt; Out1["输出 Y 是切分的<br/>无通信 ✓"]
+        M2 --&gt; Out1
+        M3 --&gt; Out1
+    end
+</pre></div>
 
 <h3 id="ch2-col-parallel">2.2.1 列并行（Column-Parallel）</h3>
 <p>把 $A$ 按列切：$A = [A_1, A_2, \ldots, A_t]$，每张卡持有 $A_i \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}/t}$。每张卡独立计算 $Y_i = X A_i$，得到 $Y = [Y_1, \ldots, Y_t]$ 的拼接。<strong>前向无通信</strong>，但输出是切分的。</p>
+
+<p>反向中需要 AllReduce 输入梯度 $\partial L / \partial X = \sum_i (\partial L / \partial Y_i) A_i^\top$，因为每张卡都贡献了对 $X$ 的梯度。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    subgraph Row["Row-Parallel: Y = X A, A 按行切，X 也切"]
+        direction LR
+        X1["X 已切分 = [X_1, X_2, X_3]"]
+        A1["A 按行切 = [A_1; A_2; A_3]"]
+        X1 --&gt; M1["GPU0: X_1 · A_1 = Y_partial_1"]
+        X1 --&gt; M2["GPU1: X_2 · A_2 = Y_partial_2"]
+        X1 --&gt; M3["GPU2: X_3 · A_3 = Y_partial_3"]
+        M1 --&gt; AR[AllReduce<br/>Y = sum Y_partial_i]
+        M2 --&gt; AR
+        M3 --&gt; AR
+        AR --&gt; Y[Y 完整输出]
+    end
+</pre></div>
 
 <h3 id="ch2-row-parallel">2.2.2 行并行（Row-Parallel）</h3>
 <p>把 $A$ 按行切：$A = [A_1; A_2; \ldots; A_t]$，输入也必须切分 $X = [X_1, \ldots, X_t]$。每张卡算 $Y_i = X_i A_i$，最后<strong>AllReduce</strong> 求和得到完整 $Y = \sum_i X_i A_i$。前向需要一次 AllReduce。</p>
@@ -1230,13 +1402,50 @@ model = FSDP(
 <p>Megatron 的关键 trick：MLP 的第一个线性层用列并行（输出切分），紧接的 GeLU 是逐元素的可以直接在切分上算，第二个线性层用行并行（输入是切分的，正好对接）。<strong>整个 MLP 只在最后一次 AllReduce</strong>：</p>
 <p>$$X \xrightarrow{\text{Col}} [Y_1, \ldots, Y_t] \xrightarrow{\text{GeLU}} [Z_1, \ldots, Z_t] \xrightarrow{\text{Row}} \sum_i Z_i B_i \xrightarrow{\text{AllReduce}} \text{Output}$$</p>
 
+<p>反向同样只一次 AllReduce（梯度对应）。这是 Megatron 论文的精髓所在：<strong>切分方向的选择消除了中间通信</strong>，把通信代价压到最低。</p>
+
 <h2 id="ch2-attn">2.3 Attention 与 MLP 的并行化</h2>
 <p>多头注意力天然适合按 <strong>head 维度</strong>切：把 $h$ 个 head 平均分到 $t$ 张卡，每卡负责 $h/t$ 个头。$Q, K, V$ 的投影矩阵列并行切，每个头独立算 attention，输出投影行并行汇总。同样只在子层结尾一次 AllReduce。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph TransformerLayer["TP=2 下的 Transformer 层（一次前向）"]
+        direction TB
+        X["Input X<br/>完整复制"]
+        subgraph Attn["Multi-Head Attention"]
+            direction LR
+            QKV0["GPU0: Q,K,V<br/>head 0..h/2"]
+            QKV1["GPU1: Q,K,V<br/>head h/2..h"]
+            A0["GPU0: softmax(QK)V<br/>per-head"]
+            A1["GPU1: softmax(QK)V<br/>per-head"]
+            OUT_AR1["AllReduce after<br/>output projection"]
+            QKV0 --&gt; A0 --&gt; OUT_AR1
+            QKV1 --&gt; A1 --&gt; OUT_AR1
+        end
+        subgraph MLP["FFN / MLP"]
+            direction LR
+            FC1_0["GPU0: W1 col-split"]
+            FC1_1["GPU1: W1 col-split"]
+            G0["GeLU"]
+            G1["GeLU"]
+            FC2_0["GPU0: W2 row-split"]
+            FC2_1["GPU1: W2 row-split"]
+            OUT_AR2["AllReduce"]
+            FC1_0 --&gt; G0 --&gt; FC2_0 --&gt; OUT_AR2
+            FC1_1 --&gt; G1 --&gt; FC2_1 --&gt; OUT_AR2
+        end
+        X --&gt; Attn --&gt; MLP
+    end
+</pre></div>
 
 <p>反向时同样需要一次 AllReduce（梯度对应），所以一层 Transformer 前+反共 4 次 AllReduce（MLP 一次正一次反，Attention 一次正一次反）。设隐藏维 $h$、序列长 $s$、micro-batch 大小 $b$，单次 AllReduce 通信量 $\sim 2bsh$（输出激活），总通信量约：</p>
 <p>$$\text{Comm}_{\text{TP,1 layer}} \approx 4 \cdot \frac{t-1}{t} \cdot 2bsh \cdot \text{bytes}$$</p>
 
-<p>关键：TP 通信量与<strong>激活</strong>成正比，与参数量无关。这与 DDP 的 AllReduce（与参数成正比）正交，互补。</p>
+<p>关键：TP 通信量与<strong>激活</strong>成正比，与参数量无关。这与 DDP 的 AllReduce（与参数成正比）正交，互补。<strong>TP 适合放在节点内</strong>（高速 NVLink），跨节点会被 InfiniBand 拖死。</p>
+
+<h3 id="ch2-tp-cost">2.3.1 TP 通信代价对比例算例</h3>
+<p>以 LLaMA-3 70B 为例：$h=8192$，$s=4096$（训练 ctx），$b=2$ micro-batch，bf16（2 bytes），TP=8：</p>
+<p>$$\text{Per layer Comm} \approx 4 \cdot \frac{7}{8} \cdot 2 \cdot 2 \cdot 4096 \cdot 8192 \cdot 2 \approx 920 \text{ MB / 层}$$</p>
+<p>80 层共约 73 GB / step / 卡。NVLink4 单向 600 GB/s，理论传输时间 73/600 ≈ 122 ms，与单层计算时间相近，所以 TP=8 在 H100 NVLink 域内仍然可扩展。一旦跨节点（IB NDR 50 GB/s），传输时间涨到 1.5 s 量级，不可接受。<strong>TP 度严格不超过节点内 GPU 数</strong>是铁律。</p>
 
 <h2 id="ch2-pipeline">2.4 流水线并行 GPipe / 1F1B</h2>
 <p>当层数远超 TP 切分能力时，把不同<strong>层</strong>放到不同 GPU 上，构成流水线并行（Pipeline Parallelism, PP）。挑战是：原始的串行训练会让 GPU 大部分时间在等上游/下游，利用率极低。</p>
@@ -1248,31 +1457,97 @@ model = FSDP(
 <p>$$\text{Bubble Fraction} = \frac{p - 1}{m + p - 1}$$</p>
 <p>典型实践 $m = 4p \sim 8p$，气泡率约 11%~20%。</p>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">gantt
+    title GPipe Schedule (p=4 stages, m=4 microbatches)
+    dateFormat X
+    axisFormat %s
+    section Stage 1
+    F1   :0, 1
+    F2   :1, 2
+    F3   :2, 3
+    F4   :3, 4
+    idle :crit, 4, 8
+    B4   :8, 9
+    B3   :9, 10
+    B2   :10, 11
+    B1   :11, 12
+    section Stage 2
+    idle :crit, 0, 1
+    F1   :1, 2
+    F2   :2, 3
+    F3   :3, 4
+    F4   :4, 5
+    idle :crit, 5, 7
+    B4   :7, 8
+    B3   :8, 9
+    B2   :9, 10
+    B1   :10, 11
+    section Stage 3
+    idle :crit, 0, 2
+    F1   :2, 3
+    F2   :3, 4
+    F3   :4, 5
+    F4   :5, 6
+    idle :crit, 6, 6
+    B4   :6, 7
+    B3   :7, 8
+    B2   :8, 9
+    B1   :9, 10
+    section Stage 4
+    idle :crit, 0, 3
+    F1   :3, 4
+    F2   :4, 5
+    F3   :5, 6
+    F4   :6, 7
+    B4   :7, 8
+    B3   :8, 9
+    B2   :9, 10
+    B1   :10, 11
+</pre></div>
+
 <h3 id="ch2-1f1b">2.4.2 1F1B（PipeDream / Megatron）</h3>
 <p>GPipe 的问题是反向阶段所有 stage 的前向激活必须存满，显存占用 $O(m)$。1F1B 调度让<strong>每个 stage 在前向后立刻反向</strong>（One-Forward-One-Backward），最多只需要保留 $p$ 个 micro-batch 的激活：</p>
 <p>$$\text{Activation Mem} = O(p) \cdot \text{per micro-batch}$$</p>
 <p>气泡率与 GPipe 相同，但显存大幅降低。Megatron-LM 默认就是 1F1B。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph S1["Stage 1 (1F1B)"]
+        direction LR
+        F1_1["F1"] --&gt; F1_2["F2"] --&gt; F1_3["F3"] --&gt; F1_4["F4"] --&gt; B1_1["B1"] --&gt; F1_5["F5"] --&gt; B1_2["B2"] --&gt; F1_6["F6"] --&gt; B1_3["B3"] --&gt; F1_7["F7"]
+    end
+    subgraph S4["Stage 4 (1F1B)"]
+        direction LR
+        idle["idle"] --&gt; F4_1["F1"] --&gt; B4_1["B1"] --&gt; F4_2["F2"] --&gt; B4_2["B2"] --&gt; F4_3["F3"] --&gt; B4_3["B3"] --&gt; F4_4["F4"] --&gt; B4_4["B4"]
+    end
+    note["注意: 一旦 stage 4 完成第 1 个 F+B<br/>就可以释放该 micro-batch 的激活内存"]
+</pre></div>
 
 <h2 id="ch2-interleaved">2.5 流水线气泡与 Interleaved 调度</h2>
 <p>Interleaved 1F1B（Megatron, Narayanan et al., 2021）把每张 GPU 的层数再分成 $v$ 个虚拟 stage，让 GPU 在多个虚拟 stage 间交替执行。气泡率降至：</p>
 <p>$$\text{Bubble} = \frac{1}{v} \cdot \frac{p - 1}{m + p - 1}$$</p>
 <p>$v = 2$ 即可把气泡减半。代价是通信次数从 $p$ 增至 $p \cdot v$，需要更低延迟的链路（NVLink/NVSwitch 上很值，跨节点 InfiniBand 上得权衡）。</p>
 
-<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">graph LR
-    subgraph "1F1B Pipeline (p=4 stages, m=8 microbatches)"
-        direction LR
-        S1["Stage 1<br/>F1 F2 F3 F4 B1 F5 B2 F6 B3 ..."]
-        S2["Stage 2<br/>... F1 F2 F3 B1 F4 B2 ..."]
-        S3["Stage 3<br/>... ... F1 F2 B1 F3 ..."]
-        S4["Stage 4<br/>... ... ... F1 B1 F2 ..."]
-        S1 --> S2 --> S3 --> S4
-    end
-</pre></div>
+<p>对比表：</p>
+<table>
+<thead><tr><th>调度</th><th>气泡率</th><th>显存（per stage）</th><th>通信次数</th><th>实现复杂度</th></tr></thead>
+<tbody>
+<tr><td>GPipe</td><td>$(p-1)/(m+p-1)$</td><td>$O(m)$ 激活</td><td>$2p$</td><td>简单</td></tr>
+<tr><td>1F1B</td><td>$(p-1)/(m+p-1)$</td><td>$O(p)$ 激活</td><td>$2p$</td><td>中等</td></tr>
+<tr><td>Interleaved 1F1B</td><td>$\frac{1}{v}\cdot$ 上式</td><td>$O(p \cdot v)$</td><td>$2p \cdot v$</td><td>高</td></tr>
+<tr><td>Zero Bubble (ZB)</td><td>$\approx 0$</td><td>$O(p)$</td><td>较 1F1B 多</td><td>很高</td></tr>
+</tbody>
+</table>
+
+<p><strong>Zero Bubble Pipeline</strong>（Qi et al., 2024）把反向拆成"对激活的反向（B）"和"对权重的反向（W）"两步独立调度，可以把气泡进一步压到接近 0，是目前 SOTA。</p>
 
 <h2 id="ch2-seq-parallel">2.6 序列并行（Sequence Parallelism）</h2>
 <p>TP 把激活按特征维 $h$ 切了，但 LayerNorm 和 Dropout 仍持有完整激活（因为 LN 涉及 $h$ 维统计，不能在 $h$ 切的副本上算）。激活显存占比可达 25%。<strong>序列并行</strong>（Korthikanti et al., 2022）把这些层的激活沿<strong>序列维 $s$</strong> 切，与 TP 的特征切互补，整层激活全切：</p>
-<p>$$\text{Act Mem per GPU} = \text{Layer Acts} \cdot \frac{1}{t} \quad \text{(seq + tensor)} $$</p>
+<p>$$\text{Act Mem per GPU} = \text{Layer Acts} \cdot \frac{1}{t} \quad \text{(seq + tensor)}$$</p>
+
 <p>代价是 TP 的 AllReduce 换成 ReduceScatter+AllGather（通信量相同），不增加通信量但需要额外同步点。Megatron-LM 的现代版本默认开启。</p>
+
+<h3 id="ch2-cp">2.6.1 Context Parallel (CP) 与超长上下文</h3>
+<p>序列并行进一步极端化就是 <strong>Context Parallel</strong>：把整条序列沿 $s$ 切到多卡，每张卡只持有 $s/c$ token 的激活。挑战在 attention：softmax 需要看到完整 QK，跨卡需要 AllGather 整段 K, V。Ring Attention (Liu et al., 2023) 用环形交换 KV 块，把 attention 做成流水线，理论上序列长度只受总 HBM 限制。这是训练 100K-1M context 模型的关键技术之一。</p>
 
 </div>
 
@@ -1286,24 +1561,70 @@ model = FSDP(
 <h2 id="ch3-memory">3.1 显存占用拆解</h2>
 <p>分析任何并行策略，第一步要算清楚单卡显存账。混合精度训练（Adam，主流）下，参数量 $P$ 个的模型，<strong>每个参数</strong>占用：</p>
 <table>
-<thead><tr><th>项</th><th>精度</th><th>字节/参数</th></tr></thead>
+<thead><tr><th>项</th><th>精度</th><th>字节/参数</th><th>用途</th></tr></thead>
 <tbody>
-<tr><td>FP16 / BF16 参数</td><td>fp16</td><td>2</td></tr>
-<tr><td>FP16 梯度</td><td>fp16</td><td>2</td></tr>
-<tr><td>FP32 主权重（Adam 更新用）</td><td>fp32</td><td>4</td></tr>
-<tr><td>Adam $m$（一阶动量）</td><td>fp32</td><td>4</td></tr>
-<tr><td>Adam $v$（二阶动量）</td><td>fp32</td><td>4</td></tr>
-<tr><td colspan="2"><strong>合计</strong></td><td><strong>16</strong></td></tr>
+<tr><td>FP16 / BF16 参数</td><td>fp16</td><td>2</td><td>前向反向计算</td></tr>
+<tr><td>FP16 梯度</td><td>fp16</td><td>2</td><td>反向产物</td></tr>
+<tr><td>FP32 主权重</td><td>fp32</td><td>4</td><td>Adam 用于更新（避免精度漂移）</td></tr>
+<tr><td>Adam $m$（一阶动量）</td><td>fp32</td><td>4</td><td>EMA(gradient)</td></tr>
+<tr><td>Adam $v$（二阶动量）</td><td>fp32</td><td>4</td><td>EMA(gradient²)</td></tr>
+<tr><td colspan="3"><strong>合计</strong></td><td><strong>16</strong></td></tr>
 </tbody>
 </table>
 <p>所以 7B 模型纯训练态显存约 $7 \times 10^9 \times 16 = 112 \text{ GB}$，再加激活、临时 buffer，单 80GB H100 也放不下。</p>
 
-<p>激活显存的估算（前向中所有层中间结果）：</p>
-<p>$$M_{\text{act}} \approx s \cdot b \cdot L \cdot (34 h + 5 a s) \text{ bytes}$$</p>
-<p>其中 $s$ 序列长、$b$ batch、$L$ 层数、$h$ 隐藏维、$a$ 注意力头数（Korthikanti 2022 公式）。激活检查点（gradient checkpointing）可以把这项降到 $\sqrt{L}$ 量级，代价是反向多算 33%。</p>
+<h3 id="ch3-activation-mem">3.1.1 激活显存的估算</h3>
+<p>前向中所有层中间结果保留下来给反向用，这部分通常被忽视但实际占比惊人。Korthikanti 等 (2022) 给出闭式：</p>
+<p>$$M_{\text{act}} \approx s \cdot b \cdot L \cdot (34 h + 5 \cdot a \cdot s) \text{ bytes}$$</p>
+<p>其中 $s$ 序列长、$b$ batch、$L$ 层数、$h$ 隐藏维、$a$ 注意力头数。<strong>$5as$ 那一项随序列平方增长</strong>，长上下文场景激活内存爆炸。</p>
+
+<p>对策：<strong>梯度检查点（activation checkpointing）</strong>。只保留少数层的激活（"checkpoint"），其它层反向时重新前向算一次。代价是反向多算约 33%。配 selective recomputation（只对计算便宜的层重算，比如 attention 的 softmax 和 dropout），实际可压到 5% 额外开销。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    subgraph Memory["7B 模型单卡显存占用 (b=2, s=4096)"]
+        direction TB
+        Param["参数 14 GB<br/>梯度 14 GB"]
+        Optim["Adam 主权重+m+v 84 GB"]
+        Act["激活 约 50 GB<br/>不含 checkpoint"]
+        TmpBuf["NCCL buffer+kernel 5 GB"]
+        Total["合计 约 167 GB<br/>需 ZeRO-3 + checkpoint 才能装 80GB H100"]
+        Param --&gt; Total
+        Optim --&gt; Total
+        Act --&gt; Total
+        TmpBuf --&gt; Total
+    end
+</pre></div>
 
 <h2 id="ch3-zero">3.2 ZeRO Stage 1 / 2 / 3</h2>
 <p>ZeRO（Rajbhandari et al., 2020）的核心思想：DDP 让每张卡持有相同的 16P 字节是冗余的，可以按 GPU 数 $N$ 分片。三个 stage 分别分片不同部分：</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph S0["DDP / ZeRO-0"]
+        direction TB
+        D0_P["参数 2P × N"]
+        D0_G["梯度 2P × N"]
+        D0_O["优化器 12P × N"]
+    end
+    subgraph S1["ZeRO-1: 切优化器"]
+        direction TB
+        D1_P["参数 2P × N"]
+        D1_G["梯度 2P × N"]
+        D1_O["优化器 12P / N × N"]
+    end
+    subgraph S2["ZeRO-2: 切优化器 + 梯度"]
+        direction TB
+        D2_P["参数 2P × N"]
+        D2_G["梯度 2P / N × N"]
+        D2_O["优化器 12P / N × N"]
+    end
+    subgraph S3["ZeRO-3 (FSDP): 全分片"]
+        direction TB
+        D3_P["参数 2P / N × N"]
+        D3_G["梯度 2P / N × N"]
+        D3_O["优化器 12P / N × N"]
+    end
+    S0 --&gt; S1 --&gt; S2 --&gt; S3
+</pre></div>
 
 <table>
 <thead><tr><th>Stage</th><th>分片对象</th><th>单卡显存（混合精度 Adam）</th><th>额外通信</th></tr></thead>
@@ -1317,10 +1638,30 @@ model = FSDP(
 
 <p>Stage 1/2 的关键好处是<strong>通信量不增加</strong>（仍是 $2P$，只是把 AllReduce 改成 ReduceScatter），但显存大幅下降。Stage 3 需要额外的 AllGather 来重组参数做前向，所以通信量从 $2P$ 涨到 $3P$，1.5× 代价换 $N$× 显存。</p>
 
+<h3 id="ch3-zero-practical">3.2.1 实践选型</h3>
+<ul>
+<li><strong>显存绰绰有余</strong>：用 DDP，最简单最快。</li>
+<li><strong>差一点（&lt; 2×）</strong>：开 ZeRO-1，无通信代价的好处。</li>
+<li><strong>差 2-4×</strong>：ZeRO-2。仍无额外通信。</li>
+<li><strong>差 &gt; 4×</strong>：ZeRO-3 / FSDP。值得为 $N$× 显存付 1.5× 通信。</li>
+<li><strong>仍放不下</strong>：ZeRO-Offload / Infinity。</li>
+</ul>
+
 <h2 id="ch3-offload">3.3 ZeRO-Offload 与 ZeRO-Infinity</h2>
-<p>当 GPU 还是放不下，ZeRO-Offload（Ren et al., 2021）把<strong>优化器状态和梯度</strong>卸载到 CPU 内存，CPU 做 Adam 更新（CPU 慢但够用，因为 step 频率低）。GPU 显存进一步降到 $\sim 2P$（仅参数）。</p>
+<p>当 GPU 还是放不下，ZeRO-Offload（Ren et al., 2021）把<strong>优化器状态和梯度</strong>卸载到 CPU 内存，CPU 做 Adam 更新（CPU 慢但够用，因为 step 频率低）。GPU 显存进一步降到 $\sim 2P$（仅参数）。代价是 PCIe 传梯度成为瓶颈。</p>
 
 <p>ZeRO-Infinity（Rajbhandari et al., 2021）更进一步，把参数也卸载到 CPU 甚至 NVMe SSD，配合 PCIe/NVMe 带宽预取。可以在 8 张 V100 上训练万亿参数模型，但训练吞吐显著下降（IO 成为瓶颈），主要用在<strong>无 H100 集群</strong>的场景。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    subgraph Tier["ZeRO-Infinity 显存分层 (单 GPU 视角)"]
+        direction LR
+        GPU["GPU HBM<br/>当前活跃层参数<br/>当前激活<br/>当前梯度"]
+        CPU["CPU RAM<br/>优化器状态<br/>不活跃层参数"]
+        NVM["NVMe SSD<br/>冷参数<br/>checkpoint"]
+        GPU &lt;--&gt;|PCIe 64 GB/s 双向| CPU
+        CPU &lt;--&gt;|NVMe 7 GB/s 顺序| NVM
+    end
+</pre></div>
 
 <pre><code class="language-json">{
     "zero_optimization": {
@@ -1347,12 +1688,39 @@ model = FSDP(
 <li><strong>DP = 8</strong>：剩下的维度做数据并行（带 ZeRO-1 进一步省显存）</li>
 </ul>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    subgraph Cluster["1024 GPU = DP=8 × TP=8 × PP=16"]
+        direction TB
+        subgraph PP_Group["PP 维度: 16 个 stage，跨 16 节点"]
+            direction LR
+            ST1["Stage 1<br/>Layers 1-6"]
+            ST2["Stage 2<br/>Layers 7-12"]
+            STDOT["..."]
+            ST16["Stage 16<br/>Layers 91-96"]
+            ST1 --&gt; ST2 --&gt; STDOT --&gt; ST16
+        end
+        subgraph TP_Group["每 stage 内: TP=8 张卡，节点内 NVLink"]
+            direction LR
+            T1["GPU0..GPU7"]
+        end
+        subgraph DP_Group["DP=8 副本: 8 个完整流水线"]
+            direction LR
+            DP1["副本 1"]
+            DP2["副本 2"]
+            DPDOT["..."]
+            DP8["副本 8"]
+        end
+        PP_Group -.- TP_Group
+        TP_Group -.- DP_Group
+    end
+</pre></div>
+
 <p>选型经验法则：</p>
 <ul>
-<li>TP 度 $\leq$ 节点内 GPU 数（NVLink 域），避免穿越 InfiniBand</li>
-<li>PP micro-batch 数 $m \geq 4 \times \text{PP}$ 以摊薄气泡</li>
-<li>DP 维度配合 ZeRO 决定显存</li>
-<li>对训练前 token < 1T 的中小模型，PP 通常不值得，DP + TP + ZeRO 就够</li>
+<li><strong>TP 度 $\leq$ 节点内 GPU 数</strong>（NVLink 域），避免穿越 InfiniBand</li>
+<li><strong>PP micro-batch 数 $m \geq 4 \times \text{PP}$</strong> 以摊薄气泡</li>
+<li><strong>DP 维度配合 ZeRO</strong> 决定显存</li>
+<li>对训练前 token &lt; 1T 的中小模型，PP 通常不值得，DP + TP + ZeRO 就够</li>
 </ul>
 
 <h2 id="ch3-vs">3.5 DeepSpeed vs Megatron-LM</h2>
@@ -1365,18 +1733,40 @@ model = FSDP(
 <tr><td>典型场景</td><td>10B 以下、显存受限</td><td>100B+、需 TP/PP</td></tr>
 </tbody>
 </table>
-<p>实践中常见的<strong>Megatron-DeepSpeed</strong> 组合：用 Megatron 的 TP+PP，用 DeepSpeed 的 ZeRO-1 做 DP，取两者之长。</p>
+<p>实践中常见的 <strong>Megatron-DeepSpeed</strong> 组合：用 Megatron 的 TP+PP，用 DeepSpeed 的 ZeRO-1 做 DP，取两者之长。这也是 BLOOM、OPT、LLaMA-2 训练用的栈。</p>
 
 <h2 id="ch3-gpu-est">3.6 训练 GPU 数估算公式</h2>
-<p>训练总计算量（前向+反向 ≈ 3 倍前向）：</p>
+<p>训练总计算量（前向+反向 ≈ 3 倍前向，对所有参数）：</p>
 <p>$$C = 6 \cdot P \cdot D \quad \text{FLOPs}$$</p>
-<p>$P$ 参数量，$D$ 训练 token 数。一张 H100 的 BF16 算力 989 TFLOPS，实际利用率（MFU, Model FLOPs Utilization）通常 30%~50%。训练时间：</p>
+<p>$P$ 参数量，$D$ 训练 token 数（DeepMind Chinchilla 法则建议 $D \approx 20P$）。一张 H100 的 BF16 算力 989 TFLOPS，实际利用率（MFU, Model FLOPs Utilization）通常 30%~50%。训练时间：</p>
 <p>$$T_{\text{days}} = \frac{6 P D}{N \cdot \text{MFU} \cdot 989 \times 10^{12} \cdot 86400}$$</p>
 
 <p>例：70B 模型，2T token，MFU = 45%，512 张 H100：</p>
 <p>$$T = \frac{6 \times 7 \times 10^{10} \times 2 \times 10^{12}}{512 \times 0.45 \times 989 \times 10^{12} \times 86400} \approx 42 \text{ 天}$$</p>
 
-<p>这个公式是 BD/采购对话的硬通货，记住。</p>
+<h3 id="ch3-mfu">3.6.1 MFU 实测与诊断</h3>
+<p>MFU 是衡量训练栈效率的核心指标。常见 MFU 范围：</p>
+<table>
+<thead><tr><th>场景</th><th>典型 MFU</th><th>瓶颈</th></tr></thead>
+<tbody>
+<tr><td>纯 DDP，小模型，单机</td><td>50-60%</td><td>kernel 启动开销</td></tr>
+<tr><td>FSDP，70B 单机多卡</td><td>40-50%</td><td>AllGather 通信</td></tr>
+<tr><td>3D 并行 175B，千卡</td><td>30-40%</td><td>PP 气泡 + 跨节点通信</td></tr>
+<tr><td>MoE 多机训练</td><td>20-30%</td><td>All-to-All 路由</td></tr>
+<tr><td>调优良好的 H100 集群 SOTA</td><td>50%</td><td>已接近理论值</td></tr>
+</tbody>
+</table>
+
+<p>诊断 MFU 偏低的方法：</p>
+<ul>
+<li><strong>Nsight Systems profile</strong>：看 kernel 与 NCCL 的时间线，找通信未隐藏的 gap</li>
+<li><strong>Bigger micro-batch</strong>：算力密度更高，往往能拉 5-10 个点</li>
+<li><strong>FlashAttention</strong>：attention 是 memory-bound，FA 能把 attention kernel MFU 拉到 60%+</li>
+<li><strong>Fused optimizer</strong>：FusedAdam 避免逐参数 kernel 启动</li>
+<li><strong>torch.compile</strong>：PyTorch 2 编译模型可省 10-20% 时间</li>
+</ul>
+
+<p>这个公式是 BD/采购对话的硬通货——记住它，能让你在和销售/老板对账时少花冤枉钱。</p>
 
 </div>
 
@@ -1389,15 +1779,60 @@ model = FSDP(
 
 <h2 id="ch4-prefill-decode">4.1 推理工作流：Prefill 与 Decode</h2>
 <p>LLM 推理可清晰地分为两个阶段，二者的计算特性完全不同：</p>
-<ul>
-<li><strong>Prefill</strong>：处理 prompt（长度 $L_p$ token），一次 forward 出整个序列的 KV，建立 KV Cache，最后一个位置出第一个 token。<strong>计算密集</strong>（compute-bound），约 $2 L_p \cdot P$ FLOPs。</li>
-<li><strong>Decode</strong>：自回归生成，每步只算一个新 token，但需要读取整个 KV Cache。<strong>访存密集</strong>（memory-bound），算术强度 $\sim 1/2$，受 HBM 带宽限制。</li>
-</ul>
-<p>这个不对称是后续所有调度优化的根因：prefill 想攒大 batch 跑满算力，decode 想最小化 KV Cache 读取。</p>
+
+<table>
+<thead><tr><th>阶段</th><th>计算量</th><th>访存量</th><th>算术强度</th><th>瓶颈</th></tr></thead>
+<tbody>
+<tr><td>Prefill</td><td>$2 L_p \cdot P$ FLOPs</td><td>$P \cdot b$ 字节 (一次读完)</td><td>$\sim L_p$</td><td>compute-bound</td></tr>
+<tr><td>Decode</td><td>$2 P$ FLOPs / token</td><td>$P \cdot b$ 字节 / token</td><td>$\sim 2$</td><td>memory-bound (HBM 带宽)</td></tr>
+</tbody>
+</table>
+
+<p>这个不对称是后续所有调度优化的根因：<strong>prefill 想攒大 batch 跑满算力</strong>，<strong>decode 想最小化 KV Cache 读取</strong>。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">sequenceDiagram
+    participant U as User
+    participant S as Server
+    participant K as KV Cache
+    U->>S: prompt (L_p tokens)
+    Note over S: Prefill: 一次 forward，并行算 L_p 个位置
+    S->>K: 写入 L_p × 2 × L × h 的 KV
+    S-->>U: 第一个生成的 token (TTFT)
+    loop Decode: 自回归生成 N 个 token
+        Note over S: 一次 forward，1 个 token<br/>读取整个 KV Cache
+        S->>K: 追加 1 个 KV 条目
+        S-->>U: 下一个 token (TPOT)
+    end
+</pre></div>
+
+<h3 id="ch4-rooflinefor">4.1.1 Roofline 分析：为什么 decode 是 memory-bound</h3>
+<p>H100 BF16 算力 989 TFLOPS，HBM3 带宽 3.35 TB/s。Roofline 的临界算术强度：</p>
+<p>$$\text{Ridge Point} = \frac{989 \times 10^{12}}{3.35 \times 10^{12}} \approx 295 \text{ FLOPs / byte}$$</p>
+<p>Prefill 算术强度 $\approx L_p$（>> 295 当 $L_p$ 大），算力受限。Decode 算术强度 $\approx 2$ FLOPs/byte（远小于 295），<strong>带宽受限</strong>。Decode 阶段 GPU 算力闲置 99%+，唯一的优化方向是减少 HBM 读取或一次读取产出更多 token（投机解码的根本动机）。</p>
 
 <h2 id="ch4-paged-attention">4.2 PagedAttention 与 KV Cache 分页</h2>
 <p>传统实现给每个序列预分配一块连续 KV Cache（按最大长度 $S_{\max}$），导致严重的<strong>内部碎片</strong>（实际生成长度往往远短于 $S_{\max}$）和<strong>外部碎片</strong>（不同序列长度差异大）。vLLM (Kwon et al., 2023) 提出 PagedAttention，把 KV Cache 切成固定大小的 <strong>block</strong>（典型 16 token），用一张<strong>页表</strong>（block table）映射逻辑块到物理块，效仿操作系统虚拟内存：</p>
 <p>$$\text{Mem Utilization}_{\text{naive}} \approx 30\%, \quad \text{Mem Utilization}_{\text{paged}} \approx 96\%$$</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph LogView["逻辑视角: 序列 A B C 各自的 KV"]
+        A_log["Seq A 逻辑块 0,1,2"]
+        B_log["Seq B 逻辑块 0,1"]
+        C_log["Seq C 逻辑块 0,1,2,3"]
+    end
+    subgraph Page["页表 block_tables[seq_id]"]
+        A_pt["A: [#5, #2, #8]"]
+        B_pt["B: [#3, #1]"]
+        C_pt["C: [#7, #4, #6, #0]"]
+    end
+    subgraph Phys["物理 KV 池 (固定大小 block)"]
+        direction LR
+        P0["#0"] --- P1["#1"] --- P2["#2"] --- P3["#3"]
+        P4["#4"] --- P5["#5"] --- P6["#6"] --- P7["#7"]
+        P8["#8"]
+    end
+    LogView --&gt; Page --&gt; Phys
+</pre></div>
 
 <p>关键收益：</p>
 <ul>
@@ -1405,6 +1840,17 @@ model = FSDP(
 <li><strong>共享 prefix</strong>：beam search、parallel sampling、system prompt 共享时直接共享 block，写时复制（CoW）。例如 GPT 多采样 $n=4$，prompt 部分的 KV 只存一份。</li>
 <li><strong>带来的代价</strong>：attention kernel 必须支持非连续访问（需要 custom CUDA kernel）。</li>
 </ul>
+
+<h3 id="ch4-prefix-cache">4.2.1 Prefix Cache 与 RadixAttention</h3>
+<p>更进一步：把所有请求共享的 prompt 前缀的 KV 持久缓存。SGLang 的 RadixAttention（Zheng et al., 2024）用 <strong>radix tree</strong> 索引 prompt，新请求来时查找最长公共前缀，对应 KV 直接复用：</p>
+<p>$$\text{Prefill Cost Saved} = \frac{L_{\text{shared}}}{L_p}$$</p>
+<p>典型场景：</p>
+<ul>
+<li><strong>chatbot 多轮对话</strong>：每轮的 prompt 都包含完整历史，前缀可复用</li>
+<li><strong>few-shot prompting</strong>：演示样例完全相同</li>
+<li><strong>agent loop</strong>：system prompt + tools 描述很长且固定</li>
+</ul>
+<p>实测可省 50-90% 的 prefill 算力，是长对话/agent 场景的关键优化。</p>
 
 <h2 id="ch4-continuous-batching">4.3 连续批处理（Continuous Batching）</h2>
 <p>静态批处理（static batching）等所有序列生成完再返回——长序列拖死整批，GPU 利用率惨。<strong>连续批处理</strong>（也叫 in-flight batching，Yu et al., 2022 / Orca）让每一步 decode 都可以替换已完成的序列：</p>
@@ -1429,8 +1875,39 @@ model = FSDP(
 <li><strong>Chunked Prefill</strong>：把长 prompt 的 prefill 切成多块，每块大小与 decode batch token 量级匹配，避免长 prompt 一次性吃掉整步。</li>
 </ul>
 
+<h3 id="ch4-admission">4.3.1 准入控制与显存压力</h3>
+<p>调度器需要根据 KV Cache 剩余容量动态决策。一个序列长度 $s$ 的 KV Cache 占用：</p>
+<p>$$\text{KV mem per seq} = 2 \cdot L \cdot s \cdot h \cdot b_{kv} \text{ bytes}$$</p>
+<p>$b_{kv}$ 是 KV 元素的字节数（fp16=2, fp8=1, int4=0.5）。当总占用 $\geq 90\%$ HBM，调度器进入<strong>抢占模式</strong>：</p>
+<ol>
+<li>优先抢占最近抵达、未生成多少 token 的序列（沉没成本小）</li>
+<li>抢占方式：方案 A 把 KV 拷贝到 CPU（再调度时拷回，~200ms 延迟）；方案 B 直接丢弃从头重算（重算成本可能比拷贝低）</li>
+<li>vLLM 默认用方案 B；TGI 用方案 A</li>
+</ol>
+
 <h2 id="ch4-speculative">4.4 投机解码（Speculative Decoding / EAGLE）</h2>
 <p>核心观察：decode 是 memory-bound，每步从 HBM 读完整模型权重生成 1 token，计算单元闲置。若能用<strong>小 draft 模型</strong>预测出 $k$ 个候选 token，再让大模型一次 forward 同时<strong>验证</strong>这 $k$ 个，就可以一次步进出多个 token，分摊 HBM 读取。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">sequenceDiagram
+    participant U as User
+    participant D as Draft Model 小
+    participant T as Target Model 大
+    U->>T: prompt
+    T->>U: token_0
+    loop 每个 verification step
+        D->>D: 串行生成 k 个候选 t1..tk (便宜)
+        D->>T: 候选 [t1..tk]
+        T->>T: 一次 forward 同时算 k+1 个位置的 logits
+        T->>T: 拒绝采样比较 draft/target 分布
+        alt 接受所有 k 个
+            T->>U: 输出 t1..tk + 额外 1 个
+            Note over T: 一次 forward 推出 k+1 token
+        else 第 j 个被拒绝
+            T->>U: 输出 t1..t(j-1) + 用 target 重采样的 tj'
+            Note over T: 总输出 j 个
+        end
+    end
+</pre></div>
 
 <p>Leviathan et al. (2022) 证明：只要 draft 模型的接受率 $\alpha$ 不为零，每步期望生成 token 数</p>
 <p>$$\mathbb{E}[\text{tokens per step}] = \frac{1 - \alpha^{k+1}}{1 - \alpha}$$</p>
@@ -1438,10 +1915,22 @@ model = FSDP(
 
 <p>新一代方案：</p>
 <ul>
-<li><strong>Medusa</strong>（Cai et al., 2024）：直接训多个 head 同时预测后续 token，省掉独立 draft 模型。</li>
+<li><strong>Medusa</strong>（Cai et al., 2024）：直接训多个 head 同时预测后续 token，省掉独立 draft 模型。零代码改动加速。</li>
 <li><strong>EAGLE / EAGLE-2</strong>（Li et al., 2024）：用 target 模型的倒数第二层 hidden state 输入 draft head，效率更高。Llama-3-70B 上稳定 3× 加速。</li>
 <li><strong>Lookahead Decoding</strong>：通过 Jacobi 迭代直接在 target 模型上做并行采样，免训练。</li>
+<li><strong>Hydra / SpecInfer</strong>：树状投机，并行验证多个分支，进一步提高接受率。</li>
 </ul>
+
+<h3 id="ch4-accept-rate">4.4.1 接受率与加速比关系</h3>
+<table>
+<thead><tr><th>接受率 $\alpha$</th><th>$k=3$ 加速</th><th>$k=5$ 加速</th><th>典型场景</th></tr></thead>
+<tbody>
+<tr><td>0.5</td><td>1.75×</td><td>1.94×</td><td>跨任务、跨域</td></tr>
+<tr><td>0.7</td><td>2.17×</td><td>2.85×</td><td>同分布微调 draft</td></tr>
+<tr><td>0.8</td><td>2.36×</td><td>3.36×</td><td>EAGLE/Medusa 良好训练</td></tr>
+<tr><td>0.9</td><td>2.71×</td><td>4.10×</td><td>同模型不同采样温度</td></tr>
+</tbody>
+</table>
 
 <h2 id="ch4-disagg">4.5 Prefill / Decode 分离部署</h2>
 <p>把 prefill 和 decode 调度到<strong>不同的 GPU 池</strong>，因为两阶段的最优配置不同：</p>
@@ -1452,7 +1941,37 @@ model = FSDP(
 <tr><td>Decode</td><td>memory bandwidth</td><td>低（TP=1-2）</td><td>大（128+）</td><td>L40S/A10（性价比 HBM）</td></tr>
 </tbody>
 </table>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Client
+        U1[User Request]
+    end
+    subgraph Router
+        R[Disagg Router]
+    end
+    subgraph PrefillPool["Prefill 池: 少量高算力 GPU"]
+        P1[H100 #1]
+        P2[H100 #2]
+    end
+    subgraph DecodePool["Decode 池: 大量 HBM GPU"]
+        D1[L40S #1]
+        D2[L40S #2]
+        D3[L40S #3]
+        D4[L40S #4]
+    end
+    subgraph KVTrans["RDMA KV Transfer<br/>~100 μs/MB"]
+        T[InfiniBand / NVLink]
+    end
+    U1 --&gt; R
+    R --&gt;|prompt| PrefillPool
+    PrefillPool --&gt;|KV Cache| T
+    T --&gt;|KV| DecodePool
+    DecodePool --&gt;|tokens| U1
+</pre></div>
+
 <p>代表系统：<strong>DistServe</strong>（Zhong et al., 2024）、<strong>Mooncake</strong>（Moonshot 2024）、<strong>SplitWise</strong>（Patel et al., 2024）。代价是 KV Cache 必须从 prefill GPU 转给 decode GPU（RDMA 传输），约 100 μs/MB，大模型场景值得。</p>
+
+<p>实测收益（Mooncake 论文）：长 prompt（&gt; 4K）场景吞吐提升 1.5-2.5×，TTFT 降低 30-50%。</p>
 
 <h2 id="ch4-frameworks">4.6 主流框架对比</h2>
 <table>
@@ -1466,6 +1985,18 @@ model = FSDP(
 </tbody>
 </table>
 <p>2024-2025 的快速参考：研究/原型 选 vLLM；生产高吞吐 + NVIDIA 栈选 TensorRT-LLM；多 turn 重共享 prompt 选 SGLang。</p>
+
+<h3 id="ch4-bench">4.6.1 性能对比基准（Llama-3-70B, H100×8）</h3>
+<table>
+<thead><tr><th>框架</th><th>throughput (tok/s)</th><th>P99 TTFT (ms)</th><th>P99 TPOT (ms)</th><th>显存利用率</th></tr></thead>
+<tbody>
+<tr><td>vLLM 0.6</td><td>2800</td><td>820</td><td>42</td><td>92%</td></tr>
+<tr><td>TGI 2.4</td><td>2400</td><td>950</td><td>48</td><td>88%</td></tr>
+<tr><td>SGLang</td><td>3100</td><td>740</td><td>40</td><td>94%</td></tr>
+<tr><td>TRT-LLM</td><td>3600</td><td>680</td><td>35</td><td>90%</td></tr>
+</tbody>
+</table>
+<p>注：实测受 prompt 分布、并发数、batch 上限影响很大，仅供量级参考。</p>
 
 </div>
 
@@ -1481,6 +2012,23 @@ model = FSDP(
 <p>$$q = \text{round}\!\left(\frac{x}{s}\right) + z, \qquad x \approx s(q - z)$$</p>
 <p>其中 $s$ 是 scale，$z$ 是 zero-point。$z=0$ 称<strong>对称量化</strong>，适合分布零中心化的权重；$z\neq 0$ 是<strong>非对称量化</strong>，适合像 ReLU 后激活那样偏向一侧的分布。</p>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Sym["对称量化 (zero-point = 0)"]
+        direction TB
+        S1["FP 区间 [-α, α]"]
+        S2["INT8 区间 [-127, 127]"]
+        S1 --&gt;|s = α/127| S2
+        S3["适合: 权重<br/>无 z 偏移开销"]
+    end
+    subgraph Asy["非对称量化 (zero-point ≠ 0)"]
+        direction TB
+        A1["FP 区间 [β_min, β_max]"]
+        A2["UINT8 区间 [0, 255]"]
+        A1 --&gt;|s, z 同时拟合| A2
+        A3["适合: ReLU/SiLU 后激活<br/>覆盖单侧分布"]
+    end
+</pre></div>
+
 <p>按 scale 来源又分：</p>
 <ul>
 <li><strong>静态量化</strong>：用 calibration set 离线统计 $s, z$，推理时固定。激活也用静态 scale，<strong>无运行时开销</strong>，但对分布偏移敏感。</li>
@@ -1494,41 +2042,124 @@ model = FSDP(
 <li><strong>per-group / per-block</strong>：每 128 个元素一组，GPTQ/AWQ 标配，是精度与开销的甜点。</li>
 </ul>
 
+<h3 id="ch5-bits">5.1.1 比特位与精度的权衡</h3>
+<table>
+<thead><tr><th>位宽</th><th>每参数字节</th><th>典型 perplexity 涨幅 (Llama-2-7B)</th><th>HBM 需求</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>BF16</td><td>2</td><td>baseline</td><td>14 GB</td><td>训练 / 服务端</td></tr>
+<tr><td>FP8 (E4M3)</td><td>1</td><td>~0.05</td><td>7 GB</td><td>H100 服务端</td></tr>
+<tr><td>INT8</td><td>1</td><td>~0.1-0.3</td><td>7 GB</td><td>所有 GPU</td></tr>
+<tr><td>INT4 (GPTQ)</td><td>0.5</td><td>~0.5</td><td>3.5 GB</td><td>消费 GPU</td></tr>
+<tr><td>INT4 (AWQ)</td><td>0.5</td><td>~0.3</td><td>3.5 GB</td><td>低显存推理</td></tr>
+<tr><td>INT3 (NF4 type)</td><td>~0.4</td><td>~1.0</td><td>2.8 GB</td><td>QLoRA 微调存储</td></tr>
+<tr><td>INT2</td><td>0.25</td><td>~3-5</td><td>1.75 GB</td><td>实验性，未稳定</td></tr>
+</tbody>
+</table>
+
 <h2 id="ch5-gptq">5.2 GPTQ：基于二阶信息的逐层量化</h2>
 <p>GPTQ (Frantar et al., 2022) 借鉴 Optimal Brain Surgeon 思想：把量化每一列权重视作一次"删除"，用 Hessian 信息补偿剩余列。对线性层 $Y = XW$，目标是最小化输出误差：</p>
 <p>$$\min_{\hat W} \| X W - X \hat W \|_F^2$$</p>
 <p>$\hat W$ 是量化后权重。逐列贪心求解，量化第 $i$ 列时把误差按 $H^{-1}$（$H = 2 X^\top X$）补偿到后续未量化列：</p>
-<p>$$\delta W_{j} = -\frac{w_i - \text{quant}(w_i)}{[H^{-1}]_{ii}} \cdot [H^{-1}]_{ij}, \quad j > i$$</p>
+<p>$$\delta W_{j} = -\frac{w_i - \text{quant}(w_i)}{[H^{-1}]_{ii}} \cdot [H^{-1}]_{ij}, \quad j &gt; i$$</p>
 
-<p>关键工程优化：使用 Cholesky 分解一次性算出 $H^{-1}$ 的上三角，避免数值不稳定；group_size=128 配合 act-order，可以把 4-bit 量化 perplexity 损失压到 0.1 以内。Llama-2-70B GPTQ 4-bit 显存从 140 GB 降到 35 GB，单 A100 可推。</p>
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    A[收集 calibration data] --&gt; B[算 H = 2X^T X 每层]
+    B --&gt; C[Cholesky 分解 H]
+    C --&gt; D[逐列 / 逐 group 贪心]
+    D --&gt; E[量化第 i 列 w_i]
+    E --&gt; F[算量化误差 Δ_i]
+    F --&gt; G[按 H^-1 补偿剩余列权重]
+    G --&gt; H{还有未量化列?}
+    H --&gt;|是| E
+    H --&gt;|否| I[输出 GPTQ 模型 + zero/scale]
+</pre></div>
+
+<p>关键工程优化：</p>
+<ul>
+<li>使用 Cholesky 分解一次性算出 $H^{-1}$ 的上三角，避免数值不稳定；</li>
+<li>group_size=128 配合 act-order，可以把 4-bit 量化 perplexity 损失压到 0.1 以内；</li>
+<li>对模型按层独立处理，可以增量量化超大模型（不需要把整个模型放进显存）。</li>
+</ul>
+<p>Llama-2-70B GPTQ 4-bit 显存从 140 GB 降到 35 GB，单 A100 可推。</p>
 
 <h2 id="ch5-awq">5.3 AWQ：激活感知权重量化</h2>
-<p>AWQ (Lin et al., 2023) 的关键观察：<strong>权重 outlier 不重要，激活 outlier 才重要</strong>。某些通道（约 1%）的激活幅度极大，量化其对应的权重时引入的误差被激活放大。解决方案：在量化前给这些通道的权重乘一个缩放 $s_i$，对应激活除以 $s_i$，数学上等价，但缩放后的权重更易量化：</p>
+<p>AWQ (Lin et al., 2023) 的关键观察：<strong>权重 outlier 不重要，激活 outlier 才重要</strong>。某些通道（约 1%）的激活幅度极大，量化其对应的权重时引入的误差被激活放大。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Before["量化前的通道 (问题)"]
+        direction TB
+        X1["通道 1 激活 量级 5"]
+        X2["通道 2 激活 量级 5"]
+        Xk["通道 k 激活 量级 200 ← outlier"]
+        Xn["通道 n 激活 量级 6"]
+    end
+    subgraph After["AWQ 后 通过 scale 平衡"]
+        direction TB
+        XW1["通道 1: x/s_1 · W·s_1, 激活降, 权重升"]
+        XWk["通道 k: x/200 · W·200, 激活到平均水平"]
+    end
+    Before --&gt; Scale[per-channel 缩放搜索 s_i = |x_i|^α] --&gt; After
+</pre></div>
+
+<p>解决方案：在量化前给这些通道的权重乘一个缩放 $s_i$，对应激活除以 $s_i$，数学上等价，但缩放后的权重更易量化：</p>
 <p>$$Y = (X \cdot \text{diag}(s)^{-1}) \cdot (\text{diag}(s) \cdot W) = X W$$</p>
-<p>缩放因子 $s_i$ 通过对每通道激活幅值的统计搜索得到，典型 $s_i = (|\bar x_i|)^\alpha$，$\alpha$ 在 [0.5, 1.0] 网格搜索。AWQ 对指令微调模型友好，量化损失常优于 GPTQ。</p>
+<p>缩放因子 $s_i$ 通过对每通道激活幅值的统计搜索得到，典型 $s_i = (|\bar x_i|)^\alpha$，$\alpha$ 在 [0.5, 1.0] 网格搜索。</p>
+
+<p>AWQ 对指令微调模型友好，量化损失常优于 GPTQ。<strong>典型场景</strong>：</p>
+<ul>
+<li>需要把大模型放进消费 GPU（如 24 GB 4090）时优先 AWQ</li>
+<li>对指令跟随质量敏感（chat 模型）时 AWQ &gt; GPTQ</li>
+<li>纯文本续写（基模型）时 GPTQ ≈ AWQ</li>
+</ul>
 
 <h2 id="ch5-smoothquant">5.4 SmoothQuant：激活迁移到权重</h2>
 <p>SmoothQuant (Xiao et al., 2022) 同样针对激活 outlier 问题，但目标是<strong>W8A8</strong>（权重和激活都 INT8）。它在<strong>每个 LayerNorm 后</strong>插入一个对角缩放，把激活的难量化"迁移"给权重：</p>
 <p>$$\hat X = X \cdot \text{diag}(s)^{-1}, \quad \hat W = \text{diag}(s) \cdot W$$</p>
 <p>$s$ 同样按激活通道幅值搜索。代价是这些缩放可以折叠进前一个 LayerNorm 的 $\gamma$ 参数（数学等价），运行时<strong>零开销</strong>。这一性质让 SmoothQuant 成为 INT8 服务端推理的事实标准。</p>
 
+<h3 id="ch5-vs">5.4.1 GPTQ / AWQ / SmoothQuant 对比</h3>
+<table>
+<thead><tr><th>方法</th><th>权重</th><th>激活</th><th>目标硬件</th><th>校准代价</th><th>典型应用</th></tr></thead>
+<tbody>
+<tr><td>GPTQ</td><td>INT4 / INT3</td><td>FP16 / BF16</td><td>消费 GPU</td><td>中（需 Hessian）</td><td>开源模型本地推理</td></tr>
+<tr><td>AWQ</td><td>INT4</td><td>FP16</td><td>消费 GPU</td><td>低（仅统计）</td><td>chat 模型边缘部署</td></tr>
+<tr><td>SmoothQuant</td><td>INT8</td><td>INT8</td><td>服务端 (Hopper 用 FP8)</td><td>低</td><td>高吞吐推理</td></tr>
+<tr><td>FP8 PTQ</td><td>FP8</td><td>FP8</td><td>H100/H200</td><td>极低（无 zero）</td><td>服务端 SOTA</td></tr>
+</tbody>
+</table>
+
 <h2 id="ch5-kv-quant">5.5 KV Cache 量化（INT8 / FP8）</h2>
 <p>长上下文场景下 KV Cache 显存占比超过权重。Llama-2-70B 在 32K 上下文、batch=8 时，KV Cache 显存：</p>
 <p>$$\text{KV Mem} = 2 \cdot L \cdot s \cdot h \cdot 2 \cdot b = 2 \times 80 \times 32768 \times 8192 \times 2 \times 8 / 10^9 \approx 686 \text{ GB}$$</p>
 <p>显然要量化。INT8 KV Cache（per-token + per-head scale）几乎零精度损失；INT4 需要更精心的 group 设计，长上下文可能掉 1-2 分。H100 起原生支持 FP8，是性价比最好的选择（Hopper 架构 FP8 算力比 BF16 快 2×，且无需 zero-point）。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph KVMem["32K ctx, batch=8, Llama-2-70B"]
+        direction TB
+        BF16K["BF16 KV: 686 GB"]
+        I8K["INT8 KV: 343 GB"]
+        FP8K["FP8 KV: 343 GB"]
+        I4K["INT4 KV: 172 GB"]
+    end
+    BF16K --&gt;|2× 压缩| I8K
+    BF16K --&gt;|2× 压缩 + FP 范围| FP8K
+    I8K --&gt;|2× 压缩| I4K
+    note["短 ctx 不需要 KV 量化&lt;br/&gt;长 ctx (&gt;= 16K) 必须做"]
+</pre></div>
 
 <p>实现要点：</p>
 <ul>
 <li>scale 通常 per-head 计算（attention head 间分布差异大）</li>
 <li>K 和 V 分布特性不同，K 更接近正态、V 更长尾，可以用不同位宽</li>
 <li>kernel 需要支持"读 INT8 KV 时反量化到 BF16 算 attention"，vLLM/TRT-LLM 都已实现</li>
+<li>持续 decode 时 scale 不需要每 token 重算，可用 EMA 平滑</li>
 </ul>
 
 <h2 id="ch5-distill">5.6 蒸馏、剪枝与结构化稀疏</h2>
 <h3 id="ch5-distill-detail">5.6.1 蒸馏</h3>
 <p>知识蒸馏：让小学生模型 $S$ 模仿大教师 $T$ 的输出分布。最经典的 KD loss：</p>
 <p>$$\mathcal{L} = \alpha \cdot \text{CE}(y, p_S) + (1 - \alpha) \cdot T^2 \cdot \text{KL}(p_T^{/T} \,\|\, p_S^{/T})$$</p>
-<p>$T$ 是温度。LLM 蒸馏的现代变体（MiniLLM, GKD）改用反向 KL 或 on-policy 数据避免 mode-covering 问题。</p>
+<p>$T$ 是温度。LLM 蒸馏的现代变体（MiniLLM, GKD）改用反向 KL 或 on-policy 数据避免 mode-covering 问题。代表项目：DistilBERT、Llama-Pruner、Phi 系列（精心蒸馏的小模型）。</p>
 
 <h3 id="ch5-prune">5.6.2 剪枝</h3>
 <ul>
@@ -1537,8 +2168,41 @@ model = FSDP(
 <li><strong>结构化剪枝</strong>：删掉整个 head / 整层 / 整通道。LLM-Pruner、Sheared LLaMA 等。可以叠加蒸馏恢复精度。</li>
 </ul>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Dense["原始权重 (dense)"]
+        direction LR
+        D[". · · · · · · · · · · · · · · ."]
+    end
+    subgraph Unstruct["非结构化稀疏: 任意位置 0"]
+        direction LR
+        U["0 · · 0 · 0 · · · 0 · · · · · 0"]
+    end
+    subgraph Sparse24["2:4 结构化: 每 4 个保留 2"]
+        direction LR
+        S2["0 · · 0  · · 0 0  · 0 · 0  0 · · 0"]
+    end
+    Dense --&gt; Unstruct
+    Dense --&gt; Sparse24
+    note["2:4 在 Ampere/Hopper Tensor Core 上&lt;br/&gt;有硬件加速，2× 算力&lt;br/&gt;非结构化只省显存不省算"]
+</pre></div>
+
 <h3 id="ch5-techstack">5.6.3 量化-蒸馏-剪枝组合</h3>
-<p>生产流水线：<strong>预训练 → 剪枝（结构化）→ 蒸馏恢复 → INT4 量化 → 部署</strong>。Llama-3-8B 经此组合可压到 2.5 GB，跑在手机端。代表项目：Llama.cpp 生态的 Q4_K_M 量化、Apple MLX 框架。</p>
+<p>生产流水线：<strong>预训练 → 剪枝（结构化）→ 蒸馏恢复 → INT4 量化 → 部署</strong>。Llama-3-8B 经此组合可压到 2.5 GB，跑在手机端。代表项目：</p>
+<ul>
+<li><strong>Llama.cpp / GGUF</strong>：CPU 友好量化格式，Q4_K_M 是平衡甜点</li>
+<li><strong>Apple MLX</strong>：M 系列芯片优化，统一内存避免 CPU/GPU 拷贝</li>
+<li><strong>MediaTek APU</strong>：移动端 NPU 量化推理</li>
+<li><strong>Qwen2.5 / Phi-3.5</strong>：原生蒸馏小模型，效率 &gt; 大模型量化</li>
+</ul>
+
+<h3 id="ch5-checklist">5.6.4 压缩决策清单</h3>
+<ol>
+<li><strong>显存够吗？</strong> 不够 → 先量化（INT8 不损失，INT4 损失 0.3-0.5 PPL 可接受）</li>
+<li><strong>是 Hopper / Ada？</strong> 是 → FP8 优先（无 zero-point，硬件原生）</li>
+<li><strong>长上下文？</strong> 是 → KV Cache 也量化（INT8 必须，INT4 谨慎）</li>
+<li><strong>端侧 / 边缘？</strong> 是 → 走 GGUF/MLX 栈，INT4 + 蒸馏</li>
+<li><strong>追求极致小？</strong> 训一个 1-3B 蒸馏小模型，比量化大模型经济</li>
+</ol>
 
 </div>
 
@@ -1550,28 +2214,64 @@ model = FSDP(
 </div>
 
 <h2 id="ch6-metrics">6.1 关键指标：TTFT / TPOT / Throughput</h2>
-<p>LLM 服务的指标体系：</p>
+<p>LLM 服务的指标体系比传统 web 服务复杂得多——一个请求是<strong>流式</strong>的，"延迟"不能用单一数字概括。</p>
+
 <table>
 <thead><tr><th>指标</th><th>含义</th><th>影响</th></tr></thead>
 <tbody>
 <tr><td><strong>TTFT</strong> (Time To First Token)</td><td>从请求到达至吐出第一个 token 的时间</td><td>用户感知"系统是否还活着"，prefill 决定</td></tr>
 <tr><td><strong>TPOT</strong> (Time Per Output Token)</td><td>之后每个 token 的平均生成时间</td><td>用户感知"打字流畅度"，decode 决定</td></tr>
 <tr><td><strong>ITL</strong> (Inter-Token Latency)</td><td>相邻 token 之间的间隔（含波动）</td><td>用户感知"卡顿"，体现尾延迟</td></tr>
+<tr><td><strong>E2E Latency</strong></td><td>从请求到完整响应的总时间</td><td>TTFT + N · TPOT</td></tr>
 <tr><td><strong>Throughput</strong></td><td>单位时间处理的 token / 请求数</td><td>成本与并发能力</td></tr>
 <tr><td><strong>Goodput</strong></td><td>满足 SLO 的 throughput</td><td>真实可用容量</td></tr>
 </tbody>
 </table>
-<p>用户体验阈值经验值：TTFT &lt; 1 秒 体感即时，TPOT 对应阅读速度 &gt; 30 token/s 即流畅（中文每 token 约 1-2 字）。Code / agent 类应用对 TTFT 更敏感。</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">gantt
+    title 单次请求的延迟分解
+    dateFormat X
+    axisFormat %s
+    section Phase
+    queue       :crit, 0, 50
+    prefill TTFT:active, 50, 500
+    decode 1    : 500, 540
+    decode 2    : 540, 580
+    decode 3    : 580, 620
+    decode 4    : 620, 660
+    decode N-1  : 660, 1300
+    decode N    : 1300, 1340
+</pre></div>
+
+<p>用户体验阈值经验值：</p>
+<ul>
+<li><strong>TTFT &lt; 1 秒</strong>：体感即时；&gt; 2 秒用户开始不耐烦</li>
+<li><strong>TPOT &gt; 30 token/s</strong>：流畅阅读速度（中文每 token 约 1-2 字）</li>
+<li><strong>TPOT &gt; 50 token/s</strong>：感觉"打字飞快"，常被认为优秀</li>
+<li><strong>Code / agent 类应用</strong>对 TTFT 更敏感（短 prompt 期望几乎瞬时）</li>
+<li><strong>长文档总结类</strong>对 TPOT 不敏感，对 TTFT 容忍度高（用户在等待整体输出）</li>
+</ul>
 
 <h2 id="ch6-slo">6.2 SLO 设计与吞吐-延迟权衡</h2>
 <p>SLO（Service Level Objective）通常以 P95 / P99 表达，比如"P95 TTFT &lt; 500 ms"。在固定硬件下，<strong>批大小 (batch size) 是延迟与吞吐的旋钮</strong>：</p>
 <p>$$\text{Throughput} \uparrow, \quad \text{Latency} \uparrow \quad \text{as batch size} \uparrow$$</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">xychart-beta
+    title "吞吐 vs P95 延迟 (固定硬件)"
+    x-axis "Batch Size" [1, 2, 4, 8, 16, 32, 64, 128]
+    y-axis "归一化指标" 0 --&gt; 1.2
+    line [0.1, 0.2, 0.35, 0.55, 0.75, 0.9, 0.98, 1.0]
+    line [0.05, 0.1, 0.2, 0.32, 0.45, 0.6, 0.85, 1.15]
+</pre></div>
+<p>（蓝线：吞吐归一化；红线：P95 latency 归一化。Batch 加大吞吐先快后饱和，延迟先慢后陡升，找拐点。）</p>
+
 <p>每张 GPU 找一个最大 batch 使得 P95 TTFT 仍满足 SLO，然后通过加机器扩并发。一个实用的<strong>断点估算</strong>：当 KV Cache 占据全部可用显存的 90% 时，加 batch 不再提升 throughput（开始抢占重计算），此时即"满 batch"。</p>
 
 <p>常见反模式：</p>
 <ul>
 <li>用静态 batch + 最大 batch 上限做 SLO 配置——长序列会拖垮 batch，导致短请求 tail latency 暴涨。<strong>必须用 continuous batching</strong>。</li>
 <li>把 max_tokens 设很大——会延长占用 KV Cache 的时间。生产环境应该按业务区分上限。</li>
+<li>用平均延迟做 SLO——平均没有意义，必须 P95/P99。LLM 的延迟分布长尾很重。</li>
 </ul>
 
 <h2 id="ch6-autoscale">6.3 弹性扩缩容与冷启动</h2>
@@ -1582,25 +2282,74 @@ model = FSDP(
 <li><strong>抢占重启代价高</strong>：进行中的请求若被驱逐，要么转移要么从头开始，体验极差。</li>
 </ul>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Triggers["扩容触发器（任一条件）"]
+        T1["P95 TTFT &gt; SLO 持续 60s"]
+        T2["等待队列深度 &gt; 阈值"]
+        T3["KV Cache 占用 &gt; 85%"]
+        T4["GPU 利用率 &gt; 90%"]
+    end
+    subgraph Pool["Pod Pool"]
+        Active["Active Pods 8"]
+        Warm["Warm Pool 2<br/>已加载权重，无流量"]
+        Cold["Cold (k8s ready 待创建)"]
+    end
+    Triggers --&gt; Decision{需要更多容量?}
+    Decision --&gt;|快速| Warm
+    Warm --&gt;|提升流量| Active
+    Decision --&gt;|慢速| Cold
+    Cold --&gt;|加载权重 5-15min| Warm
+</pre></div>
+
 <p>常用模式：</p>
 <ul>
 <li><strong>预热池 (warm pool)</strong>：维持 N 个加载好权重的 pod，按 50% headroom 计算</li>
 <li><strong>分层模型缓存</strong>：本地 NVMe 缓存权重，启动从本地读（HF Hub → local NVMe 一次性）</li>
 <li><strong>渐进式扩容</strong>：检测到 P95 TTFT 突破阈值就触发扩容，但下限低（如 5 分钟一次），防止抖动</li>
 <li><strong>多模型 GPU 共享</strong>：MIG / vGPU 切分，把小模型挤一张卡，提高利用率</li>
+<li><strong>Spot/Preemptible 实例</strong>：训练 spike 用 spot 节约 60%-70% 成本，需要 checkpoint 自动恢复</li>
 </ul>
 
 <h2 id="ch6-gateway">6.4 LLM Gateway 与多模型路由</h2>
 <p>真实业务通常同时跑十几个模型（不同尺寸、不同微调版本、不同语言），需要一层<strong>网关</strong>统一接入。核心能力：</p>
+
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart TB
+    User[业务方] --&gt;|OpenAI 兼容 API| GW[LLM Gateway]
+    GW --&gt; Auth[认证 / 配额]
+    Auth --&gt; Cache{Prompt 缓存命中?}
+    Cache --&gt;|是| Resp[直接返回]
+    Cache --&gt;|否| Route[模型路由]
+    Route --&gt;|简单 Q| Small[7B 模型池]
+    Route --&gt;|复杂 Q| Mid[34B 模型池]
+    Route --&gt;|推理 Q| Big[70B 模型池]
+    Route --&gt;|代码 Q| Code[CodeLlama 池]
+    Small --&gt; Monitor[指标收集]
+    Mid --&gt; Monitor
+    Big --&gt; Monitor
+    Code --&gt; Monitor
+    Monitor --&gt; Resp
+    Resp --&gt; User
+</pre></div>
+
 <ul>
 <li><strong>统一 API</strong>：兼容 OpenAI 接口，业务方零改造切换模型</li>
-<li><strong>智能路由</strong>：按延迟 SLO、prompt 复杂度、cost 选择模型（如简单问题路给 8B，复杂任务路给 70B）</li>
-<li><strong>限流与配额</strong>：按 token、按 RPM、按租户分配</li>
-<li><strong>降级</strong>：上游模型超时/异常时，路由到备用模型</li>
-<li><strong>请求合并</strong>：高 QPS 下把同源请求合并入同一批（已被 continuous batching 实现，gateway 层只需保证亲和性）</li>
+<li><strong>智能路由</strong>：按延迟 SLO、prompt 复杂度、cost 选择模型（如简单问题路给 8B，复杂任务路给 70B）。复杂度可用一个轻量分类器或基于关键词 heuristic 实现</li>
+<li><strong>限流与配额</strong>：按 token、按 RPM、按租户分配。常用 token bucket / leaky bucket 算法</li>
+<li><strong>降级</strong>：上游模型超时/异常时，路由到备用模型（70B 超时 → 34B → 7B → 缓存）</li>
+<li><strong>缓存层</strong>：完全相同的 prompt 直接缓存返回；语义相似的 prompt 用 embedding 检索复用（要权衡风险）</li>
+<li><strong>统一日志</strong>：所有 prompt+completion 落库做后续训练数据回流（注意 PII 脱敏）</li>
 </ul>
 
 <p>代表系统：LiteLLM、Portkey、Anyscale Endpoint。自建可基于 Envoy + 自定义 filter。</p>
+
+<h3 id="ch6-routing-detail">6.4.1 智能路由的决策算法</h3>
+<p>路由决策本质是一个<strong>分类问题</strong>：给定 prompt，选择哪个模型。简单到复杂：</p>
+<ol>
+<li><strong>规则路由</strong>：按 prompt 长度、关键词、用户 tier 直接分流。覆盖 80% 场景，0 训练成本。</li>
+<li><strong>分类器路由</strong>：训一个轻量分类器（fine-tuned bert / 小模型）预测"哪个模型最适合"。LangChain 的 Router 类即如此。</li>
+<li><strong>Cascading 路由</strong>：先用小模型答，若 confidence 低再升级到大模型。FrugalGPT (Chen et al., 2023) 的核心思想。可省 50%+ 成本。</li>
+<li><strong>RL/Bandit 路由</strong>：根据历史 reward 在线学习最优路由，适合多模型 A/B。</li>
+</ol>
 
 <h2 id="ch6-monitoring">6.5 监控、灰度发布与回滚</h2>
 <p>LLM 服务需要监控的指标远多于传统服务：</p>
@@ -1616,6 +2365,19 @@ model = FSDP(
 </tbody>
 </table>
 
+<div class="diagram-note"><div class="diagram-note-title">[ Architecture Diagram ]</div><pre class="mermaid diagram-content">flowchart LR
+    subgraph Stages["灰度发布的 5 个阶段"]
+        direction LR
+        S1[Shadow 流量 0%<br/>仅 log 对比] --&gt;|质量 OK| S2[Canary 1%]
+        S2 --&gt;|24h 无回归| S3[Stage 5%]
+        S3 --&gt;|72h 监控| S4[Ramp 25%]
+        S4 --&gt;|7d| S5[Full 100%]
+        S2 -.业务/质量回归.-&gt; RB[自动回滚]
+        S3 -.业务/质量回归.-&gt; RB
+        S4 -.业务/质量回归.-&gt; RB
+    end
+</pre></div>
+
 <p>灰度发布的工程模式：</p>
 <ol>
 <li><strong>影子流量</strong>（shadow）：新模型只读取请求、不返回，对比输出</li>
@@ -1623,6 +2385,15 @@ model = FSDP(
 <li><strong>关键样本回放</strong>：维护一组 golden prompt（含 jailbreak、边界 case），每次发布前自动跑</li>
 <li><strong>自动回滚触发器</strong>：业务错误率、refusal 率、P95 延迟任一指标恶化超 X% 即自动回滚</li>
 </ol>
+
+<h3 id="ch6-quality-eval">6.5.1 质量监控的挑战</h3>
+<p>LLM 输出难以用确定指标评判，常见做法：</p>
+<ul>
+<li><strong>LLM-as-Judge</strong>：用 GPT-4 / Claude 评分新旧模型的输出对，统计胜率。注意 self-bias 和 position-bias。</li>
+<li><strong>关键能力 benchmark</strong>：固定测试集（如 MMLU、GSM8K、HumanEval）每次发布跑一遍。</li>
+<li><strong>用户反馈信号</strong>：thumbs up/down、重写率、对话轮次。最真实但有滞后。</li>
+<li><strong>refusal/safety rate</strong>：跟踪模型拒答率突然变化（通常意味着 RLHF/safety 训练出现问题）。</li>
+</ul>
 
 <h2 id="ch6-cost">6.6 成本估算与优化</h2>
 <p>以 H100（约 $4/小时云租）跑 Llama-3-70B BF16 为例：</p>
@@ -1632,16 +2403,47 @@ model = FSDP(
 
 <p>降本的杠杆（按 ROI 从高到低）：</p>
 <ol>
-<li><strong>INT8/FP8 量化</strong>：throughput 1.8~2.5×，几乎无质量损失</li>
 <li><strong>continuous batching</strong>：相对静态 batch 提升 5-10×（基础设施级，必须做）</li>
-<li><strong>Prefix Cache / Prompt Cache</strong>：长系统 prompt 跨请求共享，节省 prefill 算力</li>
+<li><strong>INT8/FP8 量化</strong>：throughput 1.8~2.5×，几乎无质量损失</li>
+<li><strong>Prefix Cache / Prompt Cache</strong>：长系统 prompt 跨请求共享，节省 prefill 算力（chatbot/agent 场景 30-50%）</li>
 <li><strong>投机解码</strong>：decode 阶段 2-3×</li>
 <li><strong>Prefill/Decode 分离</strong>：长 prompt 业务可省 30-50% 成本</li>
 <li><strong>小模型路由</strong>：80% 简单请求路给 8B，整体均摊成本下降一个量级</li>
 <li><strong>蒸馏一个专用小模型</strong>：业务收敛后训自家小模型，比开源大模型 + prompt 便宜 10×</li>
+<li><strong>Spot/Preemptible 节点</strong>：非关键流量用 spot，省 60-70%</li>
 </ol>
 
+<h3 id="ch6-cost-table">6.6.1 不同部署方案的成本对比</h3>
+<table>
+<thead><tr><th>方案</th><th>硬件</th><th>1M tokens 成本</th><th>典型业务</th></tr></thead>
+<tbody>
+<tr><td>OpenAI GPT-4o API</td><td>第三方</td><td>$5 (input) + $15 (output)</td><td>原型 / 低量</td></tr>
+<tr><td>Claude 3.5 Sonnet API</td><td>第三方</td><td>$3 + $15</td><td>原型 / 长上下文</td></tr>
+<tr><td>自托管 Llama-3-70B BF16</td><td>4× H100</td><td>~$1.5</td><td>中量、隐私敏感</td></tr>
+<tr><td>自托管 Llama-3-70B FP8</td><td>2× H100</td><td>~$0.5</td><td>高量服务端</td></tr>
+<tr><td>自托管 8B + 智能路由</td><td>1× L40S</td><td>~$0.05</td><td>简单业务大量调用</td></tr>
+<tr><td>自托管 1.5B 蒸馏小模型</td><td>1× T4</td><td>~$0.01</td><td>专用场景大量调用</td></tr>
+</tbody>
+</table>
+
 <p>2024-2025 的趋势：从"上 GPT-4"过渡到"自家蒸馏小模型 + 路由到大模型 fallback"。一个好的 LLM 系统工程师的核心价值，是把每 1000 token 的成本压到业务能承受的水平。</p>
+
+<h2 id="ch6-checklist">6.7 生产清单</h2>
+<p>上线前的 checklist（来自实际事故经验）：</p>
+<ol>
+<li>☐ TTFT/TPOT P95/P99 已设 SLO 并有 alert</li>
+<li>☐ KV Cache 监控 + 抢占重计算率有 dashboard</li>
+<li>☐ max_tokens 上限按业务设置（防止 runaway generation）</li>
+<li>☐ Prompt 注入防护（user input 与 system prompt 严格分隔）</li>
+<li>☐ 速率限制按 token+请求双维度</li>
+<li>☐ Golden prompts 回归测试集</li>
+<li>☐ 灰度发布流程演练</li>
+<li>☐ 一键回滚到上版本</li>
+<li>☐ 权重 checkpoint 三副本（区域+对象存储+本地 NVMe）</li>
+<li>☐ Cost dashboard 按租户/业务拆分</li>
+<li>☐ 异常 prompt（jailbreak、PII、敏感词）采样审计</li>
+<li>☐ 日志含 trace_id、模型版本、采样参数</li>
+</ol>
 
 </div>
 

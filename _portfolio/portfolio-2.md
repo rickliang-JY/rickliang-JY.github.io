@@ -3,7 +3,7 @@ title: "RLStudio — Reinforcement Learning from Scratch, in the Browser"
 excerpt: "An interactive course that builds reinforcement learning from the ground up. Every algorithm is paired with the same grid-world example, visualized and runnable directly in the browser — no install required."
 collection: portfolio
 link: https://rickliang-jy.github.io/RLStudio/
-thumb_label: "RL"
+thumb_canvas: "rl"
 ---
 
 **RLStudio** takes you from zero to reinforcement learning. Every algorithm is paired with the same grid-world example, visualized and runnable directly in the browser.

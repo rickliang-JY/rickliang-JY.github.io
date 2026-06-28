@@ -19,10 +19,13 @@
   {% if include.type == "grid" and teaser %}{% assign has_media = true %}{% endif %}
   {% if is_list and post.header.teaser %}{% assign has_media = true %}{% endif %}
   {% if is_list and post.thumb_label %}{% assign has_media = true %}{% endif %}
+  {% if is_list and post.thumb_canvas %}{% assign has_media = true %}{% endif %}
   <article class="archive__item{% if is_list and has_media %} archive__item--media{% endif %}" itemscope itemtype="http://schema.org/CreativeWork">
     {% if has_media %}
       <div class="archive__item-teaser">
-        {% if include.type != "grid" and post.thumb_label and post.header.teaser == nil %}
+        {% if include.type != "grid" and post.thumb_canvas %}
+          <canvas class="archive__item-canvas" data-anim="{{ post.thumb_canvas }}"></canvas>
+        {% elsif include.type != "grid" and post.thumb_label and post.header.teaser == nil %}
           <span class="archive__item-monogram">{{ post.thumb_label }}</span>
         {% else %}
           <img src=

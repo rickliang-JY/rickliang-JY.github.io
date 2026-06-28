@@ -1,0 +1,55 @@
+---
+layout: default
+---
+
+{% include base_path %}
+
+<div id="main" role="main">
+  <div class="page page--home" itemscope itemtype="http://schema.org/Person">
+
+    <section class="home-hero">
+      <div class="home-hero__grid">
+        <div class="home-hero__intro">
+          <h1 class="home-hero__name" itemprop="name">{{ site.author.name }}</h1>
+
+          {% if page.hero_subtitle %}
+            <div class="home-hero__subtitle">{{ page.hero_subtitle | markdownify | remove: "<p>" | remove: "</p>" }}</div>
+          {% endif %}
+
+          <div class="home-hero__meta">
+            {% if site.author.employer %}{{ site.author.employer }}{% endif %}
+            {% if site.author.location %} &middot; {{ site.author.location }}{% endif %}
+          </div>
+
+          <div class="home-hero__links">
+            {% if page.cv_url %}<a href="{{ page.cv_url | prepend: base_path }}">CV</a>{% endif %}
+            {% assign hero_email = page.hero_email | default: site.author.email %}
+            {% if hero_email %}<a href="mailto:{{ hero_email }}">Email</a>{% endif %}
+            {% if site.author.github %}<a href="https://github.com/{{ site.author.github }}" target="_blank" rel="noopener">GitHub</a>{% endif %}
+            {% if site.author.googlescholar %}<a href="{{ site.author.googlescholar }}" target="_blank" rel="noopener">Google Scholar</a>{% endif %}
+          </div>
+        </div>
+
+        <div class="home-hero__media">
+          <div class="home-hero__avatar">
+            {% if site.author.avatar %}
+              {% if site.author.avatar contains "://" %}
+                <img src="{{ site.author.avatar }}" alt="{{ site.author.name }}">
+              {% else %}
+                <img src="{{ site.author.avatar | prepend: '/images/' | prepend: base_path }}" alt="{{ site.author.name }}">
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {% if content != "" %}
+      <section class="home-about page__content">
+        <h2>About</h2>
+        {{ content }}
+      </section>
+    {% endif %}
+
+  </div>
+</div>

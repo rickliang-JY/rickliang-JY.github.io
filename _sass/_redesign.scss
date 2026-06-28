@@ -1,0 +1,375 @@
+/* ==========================================================================
+   REDESIGN OVERRIDE LAYER  (imported last in main.scss)
+   Minimal black/white aesthetic inspired by the approved prototype.
+   Recolors the whole site by redefining academicpages' --global-* vars,
+   adds an Inter/Source-Serif type system, a single-column layout,
+   card-style lists, a hero homepage, and a dark-mode toggle.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --global-base-color                : #000000;
+  --global-bg-color                  : #ffffff;
+  --global-border-color              : #e5e5e5;
+  --global-code-background-color     : #f7f7f7;
+  --global-code-text-color           : #1a1a1a;
+  --global-fig-caption-color         : #6e6e6e;
+  --global-link-color                : #111111;
+  --global-link-color-hover          : #555555;
+  --global-link-color-visited        : #111111;
+  --global-masthead-link-color       : #000000;
+  --global-masthead-link-color-hover : #555555;
+  --global-text-color                : #1a1a1a;
+  --global-text-color-light          : #6e6e6e;
+  --global-thead-color               : #f2f2f2;
+
+  --rd-muted        : #6e6e6e;
+  --rd-card-bg      : #f7f7f7;
+  --rd-card-hover   : #f5f5f5;
+  --rd-avatar-bg    : #f0f0f0;
+  --rd-font-sans    : "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --rd-font-serif   : "Source Serif 4", Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+[data-theme="dark"] {
+  --global-base-color                : #000000;
+  --global-bg-color                  : #000000;
+  --global-border-color              : #333333;
+  --global-code-background-color     : #111111;
+  --global-code-text-color           : #e6e6e6;
+  --global-fig-caption-color         : #888888;
+  --global-link-color                : #ffffff;
+  --global-link-color-hover          : #cccccc;
+  --global-link-color-visited        : #ffffff;
+  --global-masthead-link-color       : #ffffff;
+  --global-masthead-link-color-hover : #cccccc;
+  --global-text-color                : #f2f2f2;
+  --global-text-color-light          : #888888;
+  --global-thead-color               : #111111;
+
+  --rd-muted      : #888888;
+  --rd-card-bg    : #111111;
+  --rd-card-hover : #161616;
+  --rd-avatar-bg  : #1a1a1a;
+}
+
+/* --------------------------------------------------------------------------
+   2. Base typography
+   -------------------------------------------------------------------------- */
+html { background-color: var(--global-bg-color); }
+
+body {
+  font-family: var(--rd-font-sans);
+  color: var(--global-text-color);
+  background-color: var(--global-bg-color);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--rd-font-sans);
+  letter-spacing: -0.02em;
+  color: var(--global-text-color);
+}
+
+a { color: var(--global-link-color); }
+
+/* --------------------------------------------------------------------------
+   3. Masthead (sticky, minimal — borderless until scrolled)
+   -------------------------------------------------------------------------- */
+.masthead {
+  position: fixed;
+  background: var(--global-bg-color);
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
+
+  &.scrolled { border-bottom-color: var(--global-border-color); }
+
+  &__inner-wrap {
+    max-width: 1080px;
+    padding: 1.1em 1.5em;
+    font-family: var(--rd-font-sans);
+  }
+}
+
+.masthead__menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.masthead__menu .greedy-nav { flex: 1 1 auto; }
+
+.greedy-nav,
+.masthead__menu-item { background: transparent; }
+
+.greedy-nav {
+  a {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--global-masthead-link-color);
+    transition: opacity 0.2s ease;
+    &:hover { color: var(--global-masthead-link-color); opacity: 0.55; }
+  }
+
+  /* remove the academicpages underline-grow effect for a cleaner look */
+  .visible-links a:before { display: none; }
+
+  .visible-links li:first-child a { font-weight: 600; font-size: 16px; }
+
+  button { background-color: var(--global-text-color); }
+
+  .hidden-links {
+    background: var(--global-bg-color);
+    border-color: var(--global-border-color);
+    a:hover { background: var(--rd-card-bg); color: var(--global-masthead-link-color); }
+  }
+}
+
+/* Dark-mode toggle button in the masthead */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.4rem;
+  background: none;
+  border: 0;
+  color: var(--global-masthead-link-color);
+  cursor: pointer;
+  line-height: 0;
+
+  &:hover { opacity: 0.6; }
+  svg { width: 18px; height: 18px; }
+}
+
+/* --------------------------------------------------------------------------
+   4. Single-column layout — drop the persistent author sidebar
+   -------------------------------------------------------------------------- */
+.sidebar,
+.author__urls-wrapper .btn { display: none !important; }
+
+#main {
+  max-width: 1080px;
+  margin-top: 2em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+}
+
+.page,
+.archive {
+  float: none !important;
+  width: 100% !important;
+  max-width: 760px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Pages that are really lists (Notes, Publications, Projects) can breathe wider */
+.archive { max-width: 100%; }
+
+/* Homepage hero spans the full content width */
+.page--home { max-width: 100% !important; }
+
+/* --------------------------------------------------------------------------
+   5. Page content typography
+   -------------------------------------------------------------------------- */
+.page__title {
+  font-size: 2.4em;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 0.6em;
+}
+
+.page__content {
+  font-size: 1.05em;
+
+  h2 {
+    margin-top: 1.8em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--global-border-color);
+    font-weight: 600;
+  }
+  h3 { margin-top: 1.4em; font-weight: 600; }
+
+  a { text-decoration: underline; text-underline-offset: 2px; }
+
+  blockquote {
+    border-left: 3px solid var(--global-border-color);
+    color: var(--rd-muted);
+  }
+}
+
+.page__meta,
+.page__date { color: var(--rd-muted); }
+
+/* --------------------------------------------------------------------------
+   6. Archive lists -> cards
+   -------------------------------------------------------------------------- */
+.archive .list__item { margin-bottom: 0.5em; }
+
+.archive__item {
+  display: block;
+  padding: 1.4em 1.5em;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+
+  &:hover { background-color: var(--rd-card-hover); }
+}
+
+/* Card with a left thumbnail when a teaser image exists */
+.archive__item--media {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2.2em;
+  align-items: center;
+
+  @media (max-width: 768px) { grid-template-columns: 1fr; gap: 1em; }
+}
+
+.archive .archive__item-teaser {
+  margin: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--rd-card-bg);
+
+  img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+}
+.archive__item:hover .archive__item-teaser img { transform: scale(1.04); }
+
+.archive__item-title {
+  margin: 0 0 0.4em 0;
+  font-family: var(--rd-font-sans);
+  font-size: 1.35em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+
+  a { text-decoration: none; }
+  a:hover { text-decoration: none; opacity: 0.65; }
+}
+
+.archive__item-excerpt {
+  font-family: var(--rd-font-serif);
+  font-size: 1em;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--global-text-color);
+}
+
+/* --------------------------------------------------------------------------
+   7. Homepage hero
+   -------------------------------------------------------------------------- */
+.home-hero { padding: 1.5em 0 3.5em; }
+
+.home-hero__grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 3.5em;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 2.2em;
+    & > .home-hero__media { order: -1; }
+  }
+}
+
+.home-hero__name {
+  font-size: 3em;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 0.5em 0;
+}
+
+.home-hero__subtitle {
+  font-size: 1.25em;
+  line-height: 1.45;
+  font-weight: 400;
+  max-width: 33ch;
+  margin-bottom: 1.4em;
+
+  a { text-decoration: none; border-bottom: 1px solid var(--global-border-color); }
+  a:hover { border-color: var(--global-text-color); }
+}
+
+.home-hero__meta {
+  font-size: 0.95em;
+  color: var(--rd-muted);
+  margin-bottom: 0.4em;
+}
+
+.home-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1em;
+  margin-top: 1.6em;
+
+  a {
+    font-size: 0.9em;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--global-text-color);
+    border-bottom: 1px solid var(--global-text-color);
+    padding-bottom: 2px;
+    transition: opacity 0.2s ease;
+    &:hover { opacity: 0.6; }
+  }
+}
+
+.home-hero__avatar {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--rd-avatar-bg);
+
+  img { width: 100%; height: 100%; object-fit: cover; margin: 0; }
+
+  @media (max-width: 768px) { width: 240px; margin: 0 auto; }
+}
+
+.home-about {
+  padding-top: 1em;
+
+  h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 1em;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  p {
+    font-family: var(--rd-font-serif);
+    font-size: 1.15em;
+    line-height: 1.65;
+    font-weight: 300;
+    max-width: 70ch;
+    margin: 0 0 1.2em 0;
+  }
+
+  a { text-decoration: none; border-bottom: 1px solid var(--global-text-color); }
+}
+
+/* --------------------------------------------------------------------------
+   8. Footer
+   -------------------------------------------------------------------------- */
+.page__footer {
+  margin-top: 3em;
+  background: var(--global-bg-color);
+  border-top: 1px solid var(--global-border-color);
+  color: var(--rd-muted);
+
+  footer { max-width: 1080px; padding: 2.5em 1.5em; }
+  a { color: var(--rd-muted); }
+}
+.page__footer-follow,
+.page__footer-copyright { color: var(--rd-muted); }

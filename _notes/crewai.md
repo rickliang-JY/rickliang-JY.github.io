@@ -1,6 +1,8 @@
 ---
 title: "Crew Ai Note"
 collection: notes
+header:
+  teaser: crewai/1743794499764.png
 type: "Talk"
 permalink: /notes/crewai
 venue: "Chicago IL"

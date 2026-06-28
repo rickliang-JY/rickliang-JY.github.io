@@ -13,19 +13,26 @@
 {% endif %}
 
 <div class="{{ include.type | default: "list" }}__item">
-  {% assign show_teaser = false %}
-  {% if include.type == "grid" and teaser %}{% assign show_teaser = true %}{% endif %}
-  {% if include.type != "grid" and post.header.teaser %}{% assign show_teaser = true %}{% endif %}
-  <article class="archive__item{% if include.type != "grid" and post.header.teaser %} archive__item--media{% endif %}" itemscope itemtype="http://schema.org/CreativeWork">
-    {% if show_teaser %}
+  {% assign is_list = false %}
+  {% if include.type != "grid" %}{% assign is_list = true %}{% endif %}
+  {% assign has_media = false %}
+  {% if include.type == "grid" and teaser %}{% assign has_media = true %}{% endif %}
+  {% if is_list and post.header.teaser %}{% assign has_media = true %}{% endif %}
+  {% if is_list and post.thumb_label %}{% assign has_media = true %}{% endif %}
+  <article class="archive__item{% if is_list and has_media %} archive__item--media{% endif %}" itemscope itemtype="http://schema.org/CreativeWork">
+    {% if has_media %}
       <div class="archive__item-teaser">
-        <img src=
-          {% if teaser contains "://" %}
-            "{{ teaser }}"
-          {% else %}
-            "{{ teaser | prepend: "/images/" | prepend: base_path }}"
-          {% endif %}
-          alt="">
+        {% if include.type != "grid" and post.thumb_label and post.header.teaser == nil %}
+          <span class="archive__item-monogram">{{ post.thumb_label }}</span>
+        {% else %}
+          <img src=
+            {% if teaser contains "://" %}
+              "{{ teaser }}"
+            {% else %}
+              "{{ teaser | prepend: "/images/" | prepend: base_path }}"
+            {% endif %}
+            alt="">
+        {% endif %}
       </div>
     {% endif %}
 

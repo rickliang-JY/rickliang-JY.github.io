@@ -1,6 +1,7 @@
 ---
 title: "Machine Learning I Note"
 collection: notes
+thumb_label: "ML"
 type: "Talk"
 permalink: /notes/machine_learning_1
 venue: "Chicago IL"

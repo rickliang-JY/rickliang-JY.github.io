@@ -1,6 +1,7 @@
 ---
 title: "AI 大模型应用开发工程师 — 面试 500+ 题题库"
 collection: notes
+thumb_label: "QA"
 type: "Note"
 permalink: /notes/llm-interview-questions
 date: 2026-05-25

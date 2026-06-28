@@ -1,6 +1,7 @@
 ---
 title: "Validating Two Pathological Foundation Models for Breast Biomarker Detection"
 collection: publications
+thumb_label: "PATH"
 category: manuscripts
 permalink: /publication/2025-pathology-foundation-validation
 excerpt: 'First study transferring Direct Preference Optimization (DPO) from LLM alignment to computational pathology. A label-free preference-pair pipeline (UMAP + DBSCAN on TITAN embeddings) plus LoRA-DPO fine-tuning lifts PR-status AUROC from 79.75% to 81.92% and Cohen''s κ from 45.40% to 54.43%. In preparation.'

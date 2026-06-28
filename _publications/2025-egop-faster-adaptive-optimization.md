@@ -1,6 +1,7 @@
 ---
 title: "Faster Adaptive Optimization via Expected Gradient Outer Product Reparameterization"
 collection: publications
+thumb_label: "OPT"
 category: manuscripts
 permalink: /publication/2025-egop-faster-adaptive-optimization
 excerpt: 'Tightens Adagrad/Adam convergence bounds by a factor of 1/d via EGOP-based reparameterization, and proposes Auxiliary-Variable and Reduced EGOP algorithms that bypass the storage/compute bottleneck of full-matrix preconditioning. Submitted to <i>SIMODS</i>.'

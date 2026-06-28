@@ -1,6 +1,7 @@
 ---
 title: "Analyst Reports and Stock Performance: Evidence from the Chinese Market"
 collection: publications
+thumb_label: "NLP"
 category: manuscripts
 permalink: /publication/2025-analyst-reports-china
 excerpt: 'Used a fine-tuned BERT sentiment classifier on Chinese sell-side analyst reports to test whether textual tone predicts cross-sectional returns in the A-share market. Accepted at <i>Asia-Pacific Financial Markets</i>.'

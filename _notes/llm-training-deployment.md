@@ -1,7 +1,8 @@
 ---
 title: "LLM 大规模训练与部署"
 collection: notes
-thumb_label: "LLM"
+header:
+  teaser: art/art-1.jpg
 type: "Note"
 permalink: /notes/llm-training-deployment
 date: 2026-05-27

@@ -1,7 +1,8 @@
 ---
 title: "LLM 核心原理深度解析"
 collection: notes
-thumb_label: "LLM"
+header:
+  teaser: art/art-2.jpg
 type: "Note"
 permalink: /notes/llm-deep-principles
 date: 2026-05-25

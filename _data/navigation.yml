@@ -15,8 +15,11 @@ main:
   #   url: /teaching/   
 
   - title: "Notes"
-    url: /notes/   
-    
+    url: /notes/
+
+  - title: "Blogs"
+    url: /blogs/
+
   - title: "Projects"
     url: /portfolio/
 

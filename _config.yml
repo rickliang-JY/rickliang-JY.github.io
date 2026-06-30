@@ -182,6 +182,7 @@ exclude:
   - package.json*
   - Rakefile
   - README
+  - templates
   - tmp
   - vendor
 keep_files:

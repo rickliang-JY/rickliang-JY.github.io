@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>两种看世界的方式 · LLaVA 与 Qwen2-VL 架构详解</title>
+<style>
+:root{
+  /* template tokens */
+  --ink:#1a1c21; --ink-2:#151E23; --muted:#5b6270; --line:#e3e6ec;
+  --accent:#2c5fa8; --accent-soft:#eef3fb; --box:#f7f8fa; --box-line:#dfe3ea;
+  --paper:#ffffff; --paper-2:#f2f3f6; --slate:#33434C;
+  /* semantic modality accents (used by the SVG diagrams + colored words) */
+  --vision:#10A2B5; --vision-deep:#0B7E8D; --vision-soft:rgba(16,162,181,.12); --vision-line:rgba(16,162,181,.45);
+  --lang:#D98A2A; --lang-deep:#B26d18; --lang-soft:rgba(217,138,42,.14); --lang-line:rgba(217,138,42,.5);
+  --line-dark:rgba(255,255,255,.14);
+  --maxw:860px; --wide:1080px;
+  --serif:"Source Han Serif SC","Noto Serif CJK SC","Songti SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",serif;
+  --sans:ui-sans-serif,system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0; background:var(--paper); color:var(--slate);
+  font-family:var(--serif); font-size:18px; line-height:1.8;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:var(--mono)}
+.disp{font-family:var(--sans)}
+
+/* layout */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+.wide{max-width:var(--wide);margin:0 auto;padding:0 22px}
+section{padding:8px 0}
+
+/* hero -> light template cover */
+.hero{background:var(--paper);color:var(--ink);padding:52px 0 24px;border-bottom:2px solid var(--ink);position:relative;overflow:hidden;}
+.hero .grid-bg{display:none}
+.eyebrow{display:inline-block;font-family:var(--sans);font-size:12.5px;letter-spacing:.08em;color:var(--accent);
+  background:var(--accent-soft);border:1px solid #d6e2f3;padding:4px 12px;border-radius:999px;font-weight:600;}
+.hero h1{font-family:var(--sans);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.12;letter-spacing:-.01em;margin:18px 0 0;color:var(--ink);}
+.hero h1 .v{color:var(--vision-deep)}
+.hero h1 .l{color:var(--lang-deep)}
+.hero .sub{font-size:clamp(16px,2.2vw,19px);color:var(--muted);max-width:620px;margin:20px 0 0;line-height:1.6;}
+.hero .meta{margin-top:26px;display:flex;gap:22px;flex-wrap:wrap;font-family:var(--sans);font-size:12.5px;letter-spacing:.02em;color:var(--muted);}
+.hero .meta b{color:var(--slate);font-weight:600}
+.legend{display:inline-flex;gap:18px;margin-top:24px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:12.5px;color:var(--muted)}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+.sw-v{background:var(--vision)}
+.sw-l{background:var(--lang)}
+
+/* body typography */
+h2.part{font-family:var(--sans);font-weight:800;font-size:clamp(23px,3.4vw,30px);line-height:1.18;letter-spacing:-.01em;
+  color:var(--ink);margin:1.7em 0 .35em;border-bottom:1px solid var(--line);padding-bottom:.3em;}
+.part-no{font-family:var(--sans);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+h3{font-family:var(--sans);font-weight:700;font-size:clamp(19px,2.4vw,22px);color:#23304a;letter-spacing:-.005em;margin:1.7em 0 .35em;line-height:1.3;}
+h4{font-family:var(--sans);font-weight:700;font-size:16.5px;color:#33405c;margin:1.4em 0 .2em;}
+p{margin:.85em 0}
+.lead{font-size:19.5px;line-height:1.7;color:var(--ink)}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid #cfe0f3}
+a:hover{background:var(--accent-soft)}
+strong{color:var(--ink);font-weight:700}
+em,i{font-style:normal}
+em.v{color:var(--vision-deep);font-weight:700}
+em.l{color:var(--lang-deep);font-weight:700}
+code{font-family:var(--mono);font-size:.85em;background:var(--paper-2);padding:1px 5px;border-radius:4px;color:var(--ink);}
+.divider{height:1px;background:var(--line);max-width:var(--maxw);margin:2.6em auto}
+
+/* callouts (context-aware: dark text in light sections, light text inside dark bands) */
+.callout{border-left:4px solid var(--accent);border:1px solid #d6e2f3;border-left-width:4px;background:var(--accent-soft);
+  padding:15px 20px;margin:1.4em 0;border-radius:0 8px 8px 0;font-size:16.5px;line-height:1.7;}
+.callout.l{border-left-color:var(--lang);background:var(--lang-soft);border-color:#ecd9bf}
+.callout .tag{font-family:var(--sans);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px;font-weight:700;}
+.callout.l .tag{color:var(--lang-deep)}
+
+/* "math chip" -> light monospace box */
+.math{font-family:var(--mono);font-size:14px;background:var(--box);border:1px solid var(--box-line);color:var(--ink);
+  padding:14px 18px;border-radius:8px;margin:1.4em 0;line-height:1.9;overflow-x:auto;}
+.math .c-v{color:var(--vision-deep)}
+.math .c-l{color:var(--lang-deep)}
+.math .cm{color:var(--muted)}
+
+/* figures (light cards; dark variant kept dark for the diagrams built for dark bg) */
+figure{margin:1.9em 0}
+figure.break{max-width:var(--wide);margin-left:auto;margin-right:auto}
+.figbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px 24px 20px;
+  box-shadow:0 1px 4px rgba(20,30,55,.06);}
+.figbox.dark{background:var(--ink-2);border-color:var(--line-dark)}
+figcaption{font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:14px;line-height:1.65;}
+figcaption b{color:var(--slate);font-weight:700}
+.fig-title{font-family:var(--sans);font-weight:700;font-size:14.5px;color:var(--ink);margin:0 0 16px;}
+.figbox.dark .fig-title{color:#EAF0F1}
+svg{display:block;width:100%;height:auto}
+text{font-family:var(--mono)}
+
+/* comparison table */
+.tablewrap{max-width:var(--wide);margin:1.9em auto;padding:0 22px}
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-family:var(--sans);}
+th,td{text-align:left;padding:12px 16px;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--sans);font-size:13.5px;letter-spacing:.02em;background:var(--ink);color:#fff;font-weight:600;}
+thead th.axis{background:var(--ink-2)}
+thead th.t-llava{color:var(--lang);border-left:1px solid var(--line-dark)}
+thead th.t-qwen{color:var(--vision);border-left:1px solid var(--line-dark)}
+td.axis{font-family:var(--sans);font-weight:700;color:var(--ink);font-size:14px;background:var(--box)}
+tbody tr:last-child td{border-bottom:none}
+td.c-llava,td.c-qwen{border-left:1px solid var(--line)}
+.pill{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:6px}
+.pill.l{background:var(--lang-soft);color:var(--lang-deep)}
+.pill.v{background:var(--vision-soft);color:var(--vision-deep)}
+
+/* dark interlude band (kept dark on purpose) */
+.band{background:var(--ink);color:#D6E0E2;padding:54px 0;margin:3.4em 0;border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)}
+.band h2.part{color:#fff;border-bottom-color:var(--line-dark)}
+.band p{color:#AEBCC0}
+.band strong{color:#fff}
+.band .part-no{color:var(--vision)}
+.band .divider{background:var(--line-dark)}
+.band a{color:#9fd0d8;border-bottom-color:rgba(159,208,216,.4)}
+
+/* references */
+.refs{max-width:var(--maxw);margin:0 auto;padding:10px 22px 90px}
+.refs h3{margin-top:10px}
+.ref{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14.5px;line-height:1.55;font-family:var(--sans);}
+.ref .id{font-family:var(--mono);color:var(--accent);font-size:13px;flex-shrink:0;width:54px;padding-top:2px}
+.ref .body{color:var(--slate)}
+.ref .body b{color:var(--ink)}
+
+footer{background:var(--box);color:var(--muted);padding:34px 0;text-align:center;font-family:var(--sans);font-size:12.5px;letter-spacing:.04em;border-top:1px solid var(--line)}
+footer .legend{justify-content:center}
+footer .legend span{color:var(--muted)}
+
+/* progress bar (kept) */
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--vision),var(--lang));width:0;z-index:50;transition:width .1s linear}
+
+/* reveal neutralized: content always visible regardless of JS */
+.reveal{opacity:1;transform:none}
+.reveal.in{opacity:1;transform:none}
+
+@media (max-width:640px){
+  body{font-size:16.5px}
+  .lead{font-size:17.5px}
+  th,td{padding:9px 10px;font-size:13px}
+  .hero{padding:38px 0 20px}
+  .wrap{padding:0 16px}
+}
+
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="grid-bg"></div>
+  <div class="wrap">
+    <div class="eyebrow">视觉语言模型 · 架构详解</div>
+    <h1>两种看世界<br>的方式</h1>
+    <p class="sub"><span class="disp" style="color:var(--lang);font-weight:600">LLaVA</span> 把图像压成固定的方格,
+       <span class="disp" style="color:var(--vision);font-weight:600">Qwen2-VL</span> 让图像保留自己的形状。
+       同一个问题——「怎么让只懂文字的语言模型看见世界」——它们给出了两种截然不同的答案。</p>
+    <div class="legend">
+      <span><i class="swatch sw-v"></i> 视觉 token / 视觉通路</span>
+      <span><i class="swatch sw-l"></i> 文本 token / 语言通路</span>
+    </div>
+    <div class="meta">
+      <span>主题 · <b>VLM 架构原理与差异</b></span>
+      <span>深度 · <b>从零基础到能动手</b></span>
+      <span>配图 · <b>全部手绘 SVG 图解</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ INTRO ============ -->
+<section class="wrap" style="padding-top:58px">
+  <p class="lead reveal">一个大语言模型(LLM)的世界是由 token 构成的——一串离散的符号,每个都对应词表里的一项。它从不「看见」任何东西,它只是在预测下一个 token。那么,要让这样一个纯文本的大脑理解一张照片,核心难题只有一个:</p>
+  <p class="reveal"><strong>怎样把一张连续的、二维的图像,变成 LLM 能吞下的那种 token?</strong> 这个问题的不同答案,几乎决定了一个视觉语言模型的全部性格。LLaVA 和 Qwen2-VL 之所以如此不同,根子就在它们对这一个问题的回答上。</p>
+  <p class="reveal">这篇文章会带你从这个最根本的问题出发,先搭起所有 VLM 共享的通用骨架,再分别拆开 LLaVA 与 Qwen2-VL 的内部结构,把它们逐一对照,最后把镜头拉远,看看这两者在整个多模态领域演化版图里各自站在哪里。读完你会发现,它们的差异不是细节之争,而是两种设计哲学的分野。</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ PART 1: THE RECIPE ============ -->
+<section class="wrap">
+  <div class="part-no reveal">Part 1 — 通用配方</div>
+  <h2 class="part reveal">所有 VLM 都长这样:三件套</h2>
+  <p class="reveal">抛开细节,几乎每一个现代视觉语言模型都是同一个三明治结构:一个<em class="v">视觉编码器</em>负责看,一个<em class="l">语言模型</em>负责说,中间夹着一个<strong>连接器(connector)</strong>负责翻译。连接器是整个故事的关键——它把视觉世界的表示,翻译成语言世界的「方言」。</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 1 · 视觉语言模型的通用骨架</div>
+    <svg viewBox="0 0 1000 320" role="img" aria-label="VLM 通用架构:视觉编码器、连接器、语言模型">
+      <!-- image input -->
+      <rect x="20" y="60" width="92" height="92" rx="6" fill="none" stroke="var(--vision)" stroke-width="1.5"/>
+      <g stroke="var(--vision-line)" stroke-width="1">
+        <line x1="20" y1="83" x2="112" y2="83"/><line x1="20" y1="106" x2="112" y2="106"/><line x1="20" y1="129" x2="112" y2="129"/>
+        <line x1="43" y1="60" x2="43" y2="152"/><line x1="66" y1="60" x2="66" y2="152"/><line x1="89" y1="60" x2="89" y2="152"/>
+      </g>
+      <text x="66" y="172" fill="var(--muted)" font-size="12" text-anchor="middle">输入图像</text>
+
+      <!-- text input -->
+      <rect x="20" y="208" width="92" height="40" rx="6" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.5"/>
+      <text x="66" y="233" fill="var(--lang-deep)" font-size="12" text-anchor="middle">"图里有什么?"</text>
+
+      <!-- ViT -->
+      <rect x="178" y="64" width="150" height="120" rx="10" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.5"/>
+      <text x="253" y="112" fill="var(--vision-deep)" font-size="15" font-weight="600" text-anchor="middle">视觉编码器</text>
+      <text x="253" y="132" fill="var(--vision-deep)" font-size="12" text-anchor="middle">ViT</text>
+      <text x="253" y="200" fill="var(--muted)" font-size="11" text-anchor="middle">把图切成 patch</text>
+
+      <!-- connector -->
+      <rect x="392" y="74" width="118" height="100" rx="10" fill="#fff" stroke="var(--slate)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="451" y="118" fill="var(--ink)" font-size="14" font-weight="600" text-anchor="middle">连接器</text>
+      <text x="451" y="137" fill="var(--slate)" font-size="11" text-anchor="middle">connector</text>
+      <text x="451" y="200" fill="var(--muted)" font-size="11" text-anchor="middle">翻译到词向量空间</text>
+
+      <!-- LLM -->
+      <rect x="574" y="44" width="170" height="220" rx="10" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.5"/>
+      <text x="659" y="148" fill="var(--lang-deep)" font-size="16" font-weight="600" text-anchor="middle">语言模型</text>
+      <text x="659" y="170" fill="var(--lang-deep)" font-size="12" text-anchor="middle">LLM (decoder)</text>
+
+      <!-- output -->
+      <rect x="812" y="124" width="168" height="60" rx="8" fill="var(--ink)"/>
+      <text x="896" y="150" fill="#fff" font-size="12.5" text-anchor="middle">"一只猫坐在</text>
+      <text x="896" y="168" fill="#fff" font-size="12.5" text-anchor="middle">窗台上。"</text>
+
+      <!-- arrows -->
+      <g stroke="var(--vision)" stroke-width="1.6" fill="none" marker-end="url(#av)">
+        <line x1="112" y1="106" x2="172" y2="106"/>
+        <line x1="328" y1="118" x2="386" y2="118"/>
+      </g>
+      <g stroke="var(--lang)" stroke-width="1.6" fill="none" marker-end="url(#al)">
+        <line x1="112" y1="228" x2="540" y2="228"/>
+        <line x1="510" y1="130" x2="568" y2="138"/>
+        <line x1="744" y1="154" x2="806" y2="154"/>
+      </g>
+      <defs>
+        <marker id="av" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--vision)"/></marker>
+        <marker id="al" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--lang)"/></marker>
+      </defs>
+    </svg>
+  </div>
+  <figcaption><b>三件套:</b>视觉编码器把图像切成 patch 编码成<b style="color:var(--vision-deep)">视觉 token</b>,连接器把它们投影进 LLM 的词向量空间,然后这些视觉 token 和<b style="color:var(--lang-deep)">文本 token</b> 一起喂给语言模型生成回答。LLaVA 和 Qwen2-VL 共享这个骨架,差异全在每个零件的具体实现上。</figcaption>
+</figure>
+
+<section class="wrap">
+  <h3 class="reveal">核心动作:把图像「切碎」成 token</h3>
+  <p class="reveal">视觉编码器几乎都是 <strong>Vision Transformer(ViT)</strong>。它的第一步叫 <strong>patchify</strong>——把图像切成一个个固定大小的小方块(patch),每个 patch 被压成一个向量。一张图于是变成一串向量,正好对应 LLM 眼里的一串 token。patch 越小、图越大,token 就越多。</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 2 · Patchify:一张图如何变成一串 token</div>
+    <svg viewBox="0 0 1000 240" role="img" aria-label="图像被切成 patch 网格并展平成 token 序列">
+      <!-- image grid -->
+      <g transform="translate(30,40)">
+        <rect x="0" y="0" width="160" height="160" rx="4" fill="none" stroke="var(--vision)" stroke-width="1.5"/>
+        <g stroke="var(--vision-line)" stroke-width="1">
+          <line x1="40" y1="0" x2="40" y2="160"/><line x1="80" y1="0" x2="80" y2="160"/><line x1="120" y1="0" x2="120" y2="160"/>
+          <line x1="0" y1="40" x2="160" y2="40"/><line x1="0" y1="80" x2="160" y2="80"/><line x1="0" y1="120" x2="160" y2="120"/>
+        </g>
+        <rect x="0" y="0" width="40" height="40" fill="var(--vision-soft)"/>
+        <text x="20" y="25" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">1</text>
+        <text x="80" y="-12" fill="var(--muted)" font-size="12" text-anchor="middle">图像 → 4×4 个 patch</text>
+      </g>
+      <!-- arrow -->
+      <line x1="215" y1="120" x2="270" y2="120" stroke="var(--slate)" stroke-width="1.6" marker-end="url(#as)"/>
+      <text x="242" y="108" fill="var(--muted)" font-size="11" text-anchor="middle">展平</text>
+      <defs><marker id="as" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--slate)"/></marker></defs>
+      <!-- token sequence -->
+      <g transform="translate(290,98)">
+        <text x="0" y="-14" fill="var(--muted)" font-size="12">展平成 16 个视觉 token 的序列</text>
+        <g>
+          <!-- draw 16 token chips -->
+          <g fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.2">
+            <rect x="0"   y="0" width="38" height="44" rx="5"/>
+            <rect x="44"  y="0" width="38" height="44" rx="5"/>
+            <rect x="88"  y="0" width="38" height="44" rx="5"/>
+            <rect x="132" y="0" width="38" height="44" rx="5"/>
+            <rect x="176" y="0" width="38" height="44" rx="5"/>
+            <rect x="220" y="0" width="38" height="44" rx="5"/>
+            <rect x="264" y="0" width="38" height="44" rx="5"/>
+          </g>
+          <text x="19"  y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">1</text>
+          <text x="63"  y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">2</text>
+          <text x="107" y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">3</text>
+          <text x="151" y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">4</text>
+          <text x="195" y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">5</text>
+          <text x="239" y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">6</text>
+          <text x="305" y="28" fill="var(--muted)" font-size="18" text-anchor="middle">···</text>
+          <rect x="330" y="0" width="60" height="44" rx="5" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.2"/>
+          <text x="360" y="28" fill="var(--vision-deep)" font-size="13" text-anchor="middle" font-weight="600">16</text>
+        </g>
+        <text x="195" y="76" fill="var(--muted)" font-size="11" text-anchor="middle">每个 token = 一个 patch 的向量表示</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>这一步是理解后面所有差异的钥匙:<b>token 的数量直接由「图多大、patch 多大」决定</b>。LLaVA 选择把所有图都缩到同一个尺寸,于是 token 数永远固定;Qwen2-VL 选择让图保留原始尺寸,于是 token 数随图而变。一个根本的分叉,就从这里开始。</figcaption>
+</figure>
+
+<div class="divider"></div>
+
+<!-- ============ PART 2: LLaVA ============ -->
+<section class="wrap">
+  <div class="part-no reveal">Part 2 — LLaVA</div>
+  <h2 class="part reveal" style="color:var(--lang-deep)">把世界压进一个固定的方格</h2>
+  <p class="lead reveal">LLaVA(Large Language and Vision Assistant)是 2023 年奠定整个范式的作品。它的设计哲学可以用两个字概括:<strong>简单</strong>。视觉编码器用现成的 CLIP,连接器只是一个小小的多层感知机(MLP),其余全交给 LLM。正是这种极简,让它成为最适合入门、也最常被复现的基线。</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 3 · LLaVA-1.5 的结构:固定 336×336,固定 576 个 token</div>
+    <svg viewBox="0 0 1000 290" role="img" aria-label="LLaVA 架构">
+      <!-- input fixed -->
+      <rect x="24" y="96" width="86" height="86" rx="5" fill="none" stroke="var(--lang)" stroke-width="1.5"/>
+      <text x="67" y="200" fill="var(--muted)" font-size="11" text-anchor="middle">任意图像</text>
+      <text x="67" y="216" fill="var(--lang-deep)" font-size="11" text-anchor="middle" font-weight="600">→ 强制缩放</text>
+      <text x="67" y="232" fill="var(--lang-deep)" font-size="11" text-anchor="middle" font-weight="600">到 336×336</text>
+
+      <!-- CLIP ViT -->
+      <rect x="172" y="70" width="158" height="140" rx="10" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.5"/>
+      <text x="251" y="125" fill="var(--vision-deep)" font-size="15" font-weight="600" text-anchor="middle">CLIP ViT-L/14</text>
+      <text x="251" y="146" fill="var(--vision-deep)" font-size="11.5" text-anchor="middle">patch=14 · 冻结</text>
+      <text x="251" y="166" fill="var(--vision-deep)" font-size="11.5" text-anchor="middle">→ 24×24 patch</text>
+
+      <!-- MLP -->
+      <rect x="392" y="86" width="120" height="108" rx="10" fill="#fff" stroke="var(--slate)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="452" y="130" fill="var(--ink)" font-size="14" font-weight="600" text-anchor="middle">2 层 MLP</text>
+      <text x="452" y="150" fill="var(--slate)" font-size="11" text-anchor="middle">projector</text>
+
+      <!-- 576 tokens -->
+      <g transform="translate(556,118)">
+        <rect x="0" y="0" width="30" height="44" rx="4" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.1"/>
+        <rect x="36" y="0" width="30" height="44" rx="4" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.1"/>
+        <rect x="72" y="0" width="30" height="44" rx="4" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.1"/>
+        <text x="120" y="28" fill="var(--muted)" font-size="16">···</text>
+        <text x="51" y="-10" fill="var(--vision-deep)" font-size="12" text-anchor="middle" font-weight="600">576 个视觉 token</text>
+        <text x="51" y="68" fill="var(--muted)" font-size="10.5" text-anchor="middle">永远是 576,不多不少</text>
+      </g>
+
+      <!-- LLM -->
+      <rect x="724" y="56" width="160" height="178" rx="10" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.5"/>
+      <text x="804" y="135" fill="var(--lang-deep)" font-size="15" font-weight="600" text-anchor="middle">Vicuna</text>
+      <text x="804" y="156" fill="var(--lang-deep)" font-size="11.5" text-anchor="middle">(LLaMA 系 LLM)</text>
+
+      <!-- arrows -->
+      <g stroke-width="1.6" fill="none">
+        <line x1="110" y1="139" x2="166" y2="139" stroke="var(--lang)" marker-end="url(#al2)"/>
+        <line x1="330" y1="140" x2="386" y2="140" stroke="var(--vision)" marker-end="url(#av2)"/>
+        <line x1="512" y1="140" x2="550" y2="140" stroke="var(--vision)" marker-end="url(#av2)"/>
+        <line x1="690" y1="140" x2="718" y2="140" stroke="var(--vision)" marker-end="url(#av2)"/>
+      </g>
+      <defs>
+        <marker id="av2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--vision)"/></marker>
+        <marker id="al2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--lang)"/></marker>
+      </defs>
+    </svg>
+  </div>
+  <figcaption><b>关键点:</b>无论你喂进来的是一张证件照还是一张高清地图,LLaVA 都先把它<b style="color:var(--lang-deep)">强行缩放成 336×336</b>,因此 ViT 永远吐出 24×24=576 个 patch,连接器永远输出 576 个视觉 token。这个「固定」是 LLaVA 一切优点(简单)与一切缺点(吃不下细节)的共同来源。</figcaption>
+</figure>
+
+<section class="wrap">
+  <h3 class="reveal">为什么是 576?一道小学算术</h3>
+  <p class="reveal">这个数字不是魔法,而是直接算出来的。CLIP ViT-L/14 的 patch 边长是 14 像素,输入边长是 336:</p>
+  <div class="math reveal">
+    <span class="cm"># 每条边的 patch 数</span><br>
+    336 ÷ 14 = <span class="c-v">24</span><br>
+    <span class="cm"># 二维网格的 patch 总数 = 视觉 token 数</span><br>
+    <span class="c-v">24</span> × <span class="c-v">24</span> = <span class="c-v">576</span> 个 token
+  </div>
+  <p class="reveal">记住这个心算方法(<code>边长 ÷ patch_size</code>,再平方),后面看 Qwen2-VL 时你会用同样的方法,算出一个完全不同的、会浮动的数字。</p>
+
+  <h3 class="reveal">LLaVA 怎么训练:两段式</h3>
+  <p class="reveal">LLaVA 的训练分两步,理解这两步对你做后训练(尤其是 SFT 阶段)非常重要,因为它决定了「哪些部件被冻结、哪些被更新」。</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 4 · LLaVA 的两段式训练:先学翻译,再学听话</div>
+    <svg viewBox="0 0 1000 300" role="img" aria-label="LLaVA 两阶段训练">
+      <!-- stage 1 -->
+      <g transform="translate(20,30)">
+        <rect x="0" y="0" width="455" height="240" rx="12" fill="var(--paper)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="22" y="34" fill="var(--ink)" font-size="15" font-weight="600" font-family="'Space Grotesk',sans-serif">阶段 1 · 特征对齐</text>
+        <text x="22" y="55" fill="var(--muted)" font-size="11.5">558K 图文对 · 只训练连接器</text>
+
+        <!-- frozen ViT -->
+        <rect x="30" y="86" width="110" height="84" rx="9" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="85" y="120" fill="var(--vision-deep)" font-size="12.5" text-anchor="middle" font-weight="600">ViT</text>
+        <text x="85" y="140" fill="var(--vision-deep)" font-size="10.5" text-anchor="middle">❄ 冻结</text>
+        <!-- connector trainable -->
+        <rect x="172" y="86" width="100" height="84" rx="9" fill="#fff" stroke="var(--lang)" stroke-width="2"/>
+        <text x="222" y="120" fill="var(--ink)" font-size="12.5" text-anchor="middle" font-weight="600">连接器</text>
+        <text x="222" y="140" fill="var(--lang-deep)" font-size="10.5" text-anchor="middle">🔥 训练</text>
+        <!-- frozen LLM -->
+        <rect x="304" y="86" width="120" height="84" rx="9" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="364" y="120" fill="var(--lang-deep)" font-size="12.5" text-anchor="middle" font-weight="600">LLM</text>
+        <text x="364" y="140" fill="var(--lang-deep)" font-size="10.5" text-anchor="middle">❄ 冻结</text>
+
+        <text x="227" y="206" fill="var(--muted)" font-size="11" text-anchor="middle">目标:让连接器学会把视觉特征</text>
+        <text x="227" y="222" fill="var(--muted)" font-size="11" text-anchor="middle">翻译成 LLM 听得懂的「词」</text>
+      </g>
+
+      <!-- stage 2 -->
+      <g transform="translate(525,30)">
+        <rect x="0" y="0" width="455" height="240" rx="12" fill="var(--paper)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="22" y="34" fill="var(--ink)" font-size="15" font-weight="600" font-family="'Space Grotesk',sans-serif">阶段 2 · 视觉指令微调</text>
+        <text x="22" y="55" fill="var(--muted)" font-size="11.5">~665K 指令数据 · 训练连接器 + LLM</text>
+
+        <rect x="30" y="86" width="110" height="84" rx="9" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="85" y="120" fill="var(--vision-deep)" font-size="12.5" text-anchor="middle" font-weight="600">ViT</text>
+        <text x="85" y="140" fill="var(--vision-deep)" font-size="10.5" text-anchor="middle">❄ 冻结</text>
+        <rect x="172" y="86" width="100" height="84" rx="9" fill="#fff" stroke="var(--lang)" stroke-width="2"/>
+        <text x="222" y="120" fill="var(--ink)" font-size="12.5" text-anchor="middle" font-weight="600">连接器</text>
+        <text x="222" y="140" fill="var(--lang-deep)" font-size="10.5" text-anchor="middle">🔥 训练</text>
+        <rect x="304" y="86" width="120" height="84" rx="9" fill="#fff" stroke="var(--lang)" stroke-width="2"/>
+        <text x="364" y="120" fill="var(--ink)" font-size="12.5" text-anchor="middle" font-weight="600">LLM</text>
+        <text x="364" y="140" fill="var(--lang-deep)" font-size="10.5" text-anchor="middle">🔥 训练</text>
+
+        <text x="227" y="206" fill="var(--muted)" font-size="11" text-anchor="middle">目标:让模型学会看着图</text>
+        <text x="227" y="222" fill="var(--muted)" font-size="11" text-anchor="middle">遵循各种指令、对话</text>
+      </g>
+
+      <line x1="478" y1="150" x2="522" y2="150" stroke="var(--slate)" stroke-width="1.6" marker-end="url(#as2)"/>
+      <defs><marker id="as2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--slate)"/></marker></defs>
+    </svg>
+  </div>
+  <figcaption><b>先连线,再上岗。</b>阶段 1 只动连接器,先把「视觉→语言」这座桥搭通;阶段 2 再解冻 LLM,教整个系统看图听话。你做项目里的 SFT(Phase 1)其实就是阶段 2 的延续——通常用 LoRA 在这个基础上继续教模型你关心的任务。</figcaption>
+</figure>
+
+<section class="wrap">
+  <h4 class="reveal">LLaVA-1.5 改了什么</h4>
+  <p class="reveal">初代 LLaVA 的连接器只是一个线性层。<strong>LLaVA-1.5</strong> 做了三个朴素但有效的升级:把连接器换成 <em class="l">2 层 MLP</em>、提高输入分辨率到 336、并加入大量学术 VQA 数据。这三招让它成了之后两年最常用的开源基线。再后来的 <strong>LLaVA-NeXT(1.6)</strong> 引入了 <em class="l">AnyRes</em>——把高清大图切成几块分别过 ViT——这其实是在为「固定分辨率」这个原罪打补丁,也预示了下一代模型的方向。</p>
+
+  <div class="callout l reveal">
+    <span class="tag">LLaVA 的阿喀琉斯之踵</span>
+    固定 336×336 意味着:一张细长的网页截图会被压扁、一张 4K 的文档照片会糊成一团、一段视频更是无从下手。<strong>当信息的密度超过 576 个 token 能承载的上限,LLaVA 就看不清了。</strong> 这正是 Qwen2-VL 要解决的问题。
+  </div>
+</section>
+
+<!-- ============ PART 3: Qwen2-VL (dark band) ============ -->
+<div class="band">
+  <div class="wide">
+    <div class="part-no reveal">Part 3 — Qwen2-VL</div>
+    <h2 class="part reveal" style="color:#fff">让图像保留它自己的形状</h2>
+  </div>
+  <div class="wrap" style="margin-top:8px">
+    <p class="lead reveal" style="color:#C9D6D9">如果说 LLaVA 的哲学是「把世界裁剪成我能处理的样子」,那 Qwen2-VL 的哲学正好相反:<strong style="color:#fff">让模型去适应世界本来的样子</strong>。这个转变带来三项核心创新:动态分辨率、token 合并、以及多模态位置编码 M-RoPE。</p>
+  </div>
+
+  <div class="wide" style="margin-top:30px">
+    <figure class="reveal" style="margin:20px 0">
+      <div class="figbox dark">
+        <div class="fig-title">图 5 · Naive Dynamic Resolution:token 数随图而变</div>
+        <svg viewBox="0 0 1000 260" role="img" aria-label="动态分辨率:不同尺寸图像产生不同数量 token">
+          <!-- small image -->
+          <g transform="translate(40,40)">
+            <rect x="0" y="0" width="60" height="60" rx="4" fill="none" stroke="var(--vision)" stroke-width="1.4"/>
+            <text x="30" y="82" fill="#9AA8AC" font-size="11" text-anchor="middle">小图</text>
+            <text x="30" y="98" fill="#9AA8AC" font-size="10" text-anchor="middle">224×224</text>
+          </g>
+          <line x1="120" y1="70" x2="165" y2="70" stroke="var(--vision)" stroke-width="1.5" marker-end="url(#avd)"/>
+          <g transform="translate(178,52)">
+            <rect x="0" y="0" width="24" height="36" rx="3" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <rect x="28" y="0" width="24" height="36" rx="3" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <rect x="56" y="0" width="24" height="36" rx="3" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <text x="40" y="58" fill="var(--vision)" font-size="11.5" text-anchor="middle" font-weight="600">~66 token</text>
+          </g>
+
+          <!-- big image -->
+          <g transform="translate(40,150)">
+            <rect x="0" y="0" width="116" height="74" rx="4" fill="none" stroke="var(--vision)" stroke-width="1.4"/>
+            <text x="58" y="-10" fill="#9AA8AC" font-size="11" text-anchor="middle">大图 / 高清文档 1280×800</text>
+          </g>
+          <line x1="170" y1="186" x2="215" y2="186" stroke="var(--vision)" stroke-width="1.5" marker-end="url(#avd)"/>
+          <g transform="translate(228,168)">
+            <g fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1">
+              <rect x="0" y="0" width="20" height="34" rx="3"/><rect x="24" y="0" width="20" height="34" rx="3"/>
+              <rect x="48" y="0" width="20" height="34" rx="3"/><rect x="72" y="0" width="20" height="34" rx="3"/>
+              <rect x="96" y="0" width="20" height="34" rx="3"/><rect x="120" y="0" width="20" height="34" rx="3"/>
+            </g>
+            <text x="158" y="20" fill="var(--vision)" font-size="13">···</text>
+            <text x="70" y="56" fill="var(--vision)" font-size="11.5" text-anchor="middle" font-weight="600">上千个 token</text>
+          </g>
+
+          <!-- divider -->
+          <line x1="440" y1="30" x2="440" y2="230" stroke="var(--line-dark)" stroke-width="1"/>
+
+          <!-- contrast with llava -->
+          <g transform="translate(480,40)">
+            <text x="0" y="0" fill="var(--lang)" font-size="13" font-weight="600" font-family="'Space Grotesk',sans-serif">对比 · LLaVA 的做法</text>
+            <g transform="translate(0,28)">
+              <rect x="0" y="0" width="44" height="44" rx="4" fill="none" stroke="var(--lang)" stroke-width="1.3"/>
+              <rect x="120" y="6" width="74" height="34" rx="4" fill="none" stroke="var(--lang)" stroke-width="1.3"/>
+              <text x="82" y="20" fill="#9AA8AC" font-size="11" text-anchor="middle">不论大小</text>
+              <text x="82" y="34" fill="#9AA8AC" font-size="10" text-anchor="middle">都缩到 336²</text>
+              <line x1="50" y1="22" x2="114" y2="22" stroke="var(--lang)" stroke-width="1.3" marker-end="url(#ald)"/>
+            </g>
+            <g transform="translate(0,96)">
+              <rect x="0" y="0" width="20" height="30" rx="3" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1"/>
+              <rect x="24" y="0" width="20" height="30" rx="3" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1"/>
+              <rect x="48" y="0" width="20" height="30" rx="3" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1"/>
+              <text x="88" y="14" fill="var(--lang)" font-size="13">···</text>
+              <text x="40" y="50" fill="var(--lang)" font-size="12" font-weight="600">永远 576 token</text>
+              <text x="0" y="74" fill="#8A989C" font-size="10.5">大图被压缩、细节丢失 ✗</text>
+            </g>
+          </g>
+
+          <defs>
+            <marker id="avd" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--vision)"/></marker>
+            <marker id="ald" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--lang)"/></marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption style="color:#8A989C"><b style="color:#C9D4D7">核心区别一图说尽:</b>Qwen2-VL 给小图少量 token、给大图大量 token,信息密度和 token 预算成正比;LLaVA 则把所有图都塞进同一个 576 的盒子里。处理文档、长截图、细密表格时,这个差异是决定性的。</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap">
+    <h3 class="reveal" style="color:#fff">改造一:动态分辨率,需要先动 ViT 的位置编码</h3>
+    <p class="reveal">让 ViT 接受任意分辨率,有一个隐藏的麻烦:传统 ViT 用的是<strong style="color:#fff">绝对位置编码</strong>——它预设了「图就是 24×24 个 patch」,一旦 patch 数量会变,这套固定的位置表就失效了。Qwen2-VL 的解法是:<strong style="color:#fff">删掉 ViT 里的绝对位置编码,换成 2D-RoPE</strong>(二维旋转位置编码),用相对的、可外推的方式表达「第几行第几列」,这样不管多少个 patch 都能正确编码空间位置。</p>
+
+    <h3 class="reveal" style="color:#fff">改造二:2×2 合并,给 token 数量「踩刹车」</h3>
+    <p class="reveal">动态分辨率有个副作用——大图会产生海量 token,把 LLM 的上下文撑爆。Qwen2-VL 在 ViT 之后接一个小 MLP,<strong style="color:#fff">把相邻的 2×2 共 4 个 patch 压缩成 1 个 token</strong>,token 数直接砍掉 4 倍,再用 <code>&lt;|vision_start|&gt;</code> 和 <code>&lt;|vision_end|&gt;</code> 把这段视觉 token 包起来。</p>
+  </div>
+
+  <div class="wide">
+    <figure class="reveal" style="margin:24px 0">
+      <div class="figbox dark">
+        <div class="fig-title">图 6 · 2×2 token 合并:再算一次那道算术</div>
+        <svg viewBox="0 0 1000 220" role="img" aria-label="2x2 token 合并过程">
+          <!-- 16x16 grid representation -->
+          <g transform="translate(40,50)">
+            <rect x="0" y="0" width="120" height="120" rx="4" fill="none" stroke="var(--vision)" stroke-width="1.4"/>
+            <g stroke="var(--vision-line)" stroke-width=".8">
+              <line x1="30" y1="0" x2="30" y2="120"/><line x1="60" y1="0" x2="60" y2="120"/><line x1="90" y1="0" x2="90" y2="120"/>
+              <line x1="0" y1="30" x2="120" y2="30"/><line x1="0" y1="60" x2="120" y2="60"/><line x1="0" y1="90" x2="120" y2="90"/>
+            </g>
+            <rect x="0" y="0" width="60" height="60" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.6"/>
+            <text x="60" y="-12" fill="#9AA8AC" font-size="11" text-anchor="middle">224×224 → 16×16 = 256 patch</text>
+            <text x="30" y="34" fill="var(--vision)" font-size="10" text-anchor="middle">2×2</text>
+          </g>
+          <line x1="195" y1="110" x2="250" y2="110" stroke="var(--vision)" stroke-width="1.6" marker-end="url(#avm)"/>
+          <text x="222" y="98" fill="#9AA8AC" font-size="10" text-anchor="middle">MLP 合并</text>
+
+          <!-- merged -->
+          <g transform="translate(268,68)">
+            <rect x="0" y="0" width="84" height="84" rx="4" fill="none" stroke="var(--vision)" stroke-width="1.4"/>
+            <g stroke="var(--vision-line)" stroke-width=".8">
+              <line x1="28" y1="0" x2="28" y2="84"/><line x1="56" y1="0" x2="56" y2="84"/>
+              <line x1="0" y1="28" x2="84" y2="28"/><line x1="0" y1="56" x2="84" y2="56"/>
+            </g>
+            <rect x="0" y="0" width="28" height="28" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.6"/>
+            <text x="42" y="-12" fill="#9AA8AC" font-size="11" text-anchor="middle">8×8 = 64 token</text>
+          </g>
+
+          <!-- math -->
+          <g transform="translate(420,40)">
+            <rect x="0" y="0" width="540" height="140" rx="10" fill="rgba(255,255,255,.04)" stroke="var(--line-dark)" stroke-width="1"/>
+            <text x="24" y="36" fill="#7E8E94" font-size="13" font-family="'IBM Plex Mono',monospace"># 224×224,patch=14</text>
+            <text x="24" y="62" fill="#D8E2E4" font-size="14" font-family="'IBM Plex Mono',monospace">224 ÷ 14 = <tspan fill="var(--vision)">16</tspan>  →  <tspan fill="var(--vision)">16</tspan> × <tspan fill="var(--vision)">16</tspan> = <tspan fill="var(--vision)">256</tspan> patch</text>
+            <text x="24" y="92" fill="#7E8E94" font-size="13" font-family="'IBM Plex Mono',monospace"># 2×2 合并,÷4</text>
+            <text x="24" y="118" fill="#D8E2E4" font-size="14" font-family="'IBM Plex Mono',monospace"><tspan fill="var(--vision)">256</tspan> ÷ 4 = <tspan fill="var(--vision)">64</tspan>,再 +2 个边界 token = <tspan fill="var(--vision)" font-weight="600">66</tspan></text>
+          </g>
+          <defs><marker id="avm" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--vision)"/></marker></defs>
+        </svg>
+      </div>
+      <figcaption style="color:#8A989C">这就是为什么一张 224×224 的图进 Qwen2-VL 后是 <b style="color:#C9D4D7">66 个 token</b>(64 + vision_start + vision_end),而在 LLaVA 里同样的图会被拉伸到 336 再变成固定的 576。token 预算的精打细算,是 Qwen2-VL 能同时塞下多图和长视频的前提。</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap">
+    <h3 class="reveal" style="color:#fff">改造三:M-RoPE,给文本、图像、视频一套统一的「坐标系」</h3>
+    <p class="reveal">这是 Qwen2-VL 最优雅的一笔。普通 LLM 的位置编码(1D-RoPE)只有一个维度——「第几个 token」,这对一行文字够用,但对一张二维的图、一段三维的视频(高 × 宽 × 时间)就太贫乏了。<strong style="color:#fff">M-RoPE(多模态旋转位置编码)把位置拆成三个分量:时间(temporal)、高(height)、宽(width)</strong>,让同一套机制能同时表达三种模态的位置。</p>
+  </div>
+
+  <div class="wide">
+    <figure class="reveal" style="margin:24px 0 0">
+      <div class="figbox dark">
+        <div class="fig-title">图 7 · M-RoPE:一套坐标,三种模态</div>
+        <svg viewBox="0 0 1000 240" role="img" aria-label="M-RoPE 对文本图像视频的位置编码">
+          <!-- text 1D -->
+          <g transform="translate(40,40)">
+            <text x="0" y="0" fill="var(--lang)" font-size="13" font-weight="600" font-family="'Space Grotesk',sans-serif">文本 · 1 维</text>
+            <g transform="translate(0,20)">
+              <rect x="0" y="0" width="34" height="34" rx="4" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.2"/>
+              <rect x="40" y="0" width="34" height="34" rx="4" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.2"/>
+              <rect x="80" y="0" width="34" height="34" rx="4" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.2"/>
+              <rect x="120" y="0" width="34" height="34" rx="4" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.2"/>
+              <text x="17" y="22" fill="var(--lang)" font-size="11" text-anchor="middle">t</text>
+              <text x="57" y="22" fill="var(--lang)" font-size="11" text-anchor="middle">t+1</text>
+              <text x="97" y="22" fill="var(--lang)" font-size="11" text-anchor="middle">t+2</text>
+              <text x="137" y="22" fill="var(--lang)" font-size="11" text-anchor="middle">t+3</text>
+            </g>
+            <text x="0" y="86" fill="#8A989C" font-size="10.5">位置 = (序号)</text>
+          </g>
+
+          <line x1="240" y1="40" x2="240" y2="200" stroke="var(--line-dark)" stroke-width="1"/>
+
+          <!-- image 2D -->
+          <g transform="translate(280,40)">
+            <text x="0" y="0" fill="var(--vision)" font-size="13" font-weight="600" font-family="'Space Grotesk',sans-serif">图像 · 2 维(高 × 宽)</text>
+            <g transform="translate(0,20)">
+              <g fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.1">
+                <rect x="0" y="0" width="34" height="34" rx="4"/><rect x="40" y="0" width="34" height="34" rx="4"/><rect x="80" y="0" width="34" height="34" rx="4"/>
+                <rect x="0" y="40" width="34" height="34" rx="4"/><rect x="40" y="40" width="34" height="34" rx="4"/><rect x="80" y="40" width="34" height="34" rx="4"/>
+              </g>
+              <text x="17" y="21" fill="var(--vision-deep)" font-size="9" text-anchor="middle">0,0</text>
+              <text x="57" y="21" fill="var(--vision-deep)" font-size="9" text-anchor="middle">0,1</text>
+              <text x="97" y="21" fill="var(--vision-deep)" font-size="9" text-anchor="middle">0,2</text>
+              <text x="17" y="61" fill="var(--vision-deep)" font-size="9" text-anchor="middle">1,0</text>
+              <text x="57" y="61" fill="var(--vision-deep)" font-size="9" text-anchor="middle">1,1</text>
+              <text x="97" y="61" fill="var(--vision-deep)" font-size="9" text-anchor="middle">1,2</text>
+            </g>
+            <text x="0" y="126" fill="#8A989C" font-size="10.5">位置 = (高, 宽)</text>
+          </g>
+
+          <line x1="470" y1="40" x2="470" y2="200" stroke="var(--line-dark)" stroke-width="1"/>
+
+          <!-- video 3D -->
+          <g transform="translate(510,40)">
+            <text x="0" y="0" fill="var(--vision)" font-size="13" font-weight="600" font-family="'Space Grotesk',sans-serif">视频 · 3 维(时间 × 高 × 宽)</text>
+            <g transform="translate(0,20)">
+              <!-- frame stack -->
+              <g opacity=".4">
+                <rect x="16" y="-6" width="92" height="64" rx="5" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+              </g>
+              <g opacity=".7">
+                <rect x="8" y="0" width="92" height="64" rx="5" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+              </g>
+              <rect x="0" y="6" width="92" height="64" rx="5" fill="var(--ink)" stroke="var(--vision)" stroke-width="1.4"/>
+              <g stroke="var(--vision-line)" stroke-width=".8">
+                <line x1="30.6" y1="6" x2="30.6" y2="70"/><line x1="61.3" y1="6" x2="61.3" y2="70"/>
+                <line x1="0" y1="27.3" x2="92" y2="27.3"/><line x1="0" y1="48.6" x2="92" y2="48.6"/>
+              </g>
+              <text x="170" y="20" fill="var(--vision)" font-size="11">每帧 = 一个 (高,宽) 平面</text>
+              <text x="170" y="40" fill="var(--vision)" font-size="11">帧与帧之间 = 时间维递增</text>
+            </g>
+            <text x="0" y="126" fill="#8A989C" font-size="10.5">位置 = (时间, 高, 宽)</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption style="color:#8A989C"><b style="color:#C9D4D7">为什么这很重要:</b>因为文本、图像、视频共用同一套位置编码机制,Qwen2-VL 可以把它们<b style="color:#C9D4D7">自由混排在同一个序列里</b>——多张图、图文交错、整段视频,模型都知道每个 token 在「时-空」里的确切位置。视频对它而言不过是「时间维 &gt; 0 的图像」,天然统一。</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap" style="margin-top:30px">
+    <div class="callout reveal" style="border-left-color:var(--vision);background:rgba(16,162,181,.1)">
+      <span class="tag" style="color:var(--vision)">一个常被忽略的细节</span>
+      <span style="color:#C9D6D9">Qwen 系列<strong style="color:#fff">没有 Q-Former,也没有复杂的融合层</strong>。视觉 token 经 2×2 合并后,直接和文本 token 拼在一起、丢进 LLM,靠 LLM 自己的 self-attention 完成融合。连接器极简,复杂度被转移到了「如何表示位置」(M-RoPE)和「如何控制 token 数」(动态分辨率 + 合并)上。</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PART 4: HEAD TO HEAD ============ -->
+<section class="wrap">
+  <div class="part-no reveal">Part 4 — 正面对决</div>
+  <h2 class="part reveal">逐条对照</h2>
+  <p class="reveal">把两者放在一起,差异就清晰了。注意:这不是「谁更先进」的排名,而是<strong>两套针对不同优先级的取舍</strong>。LLaVA 押注简单与可复现,Qwen2-VL 押注保真与统一。</p>
+</section>
+
+<div class="tablewrap reveal">
+  <table>
+    <thead>
+      <tr>
+        <th class="axis">维度</th>
+        <th class="t-llava">LLaVA / LLaVA-1.5</th>
+        <th class="t-qwen">Qwen2-VL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="axis">分辨率处理</td>
+        <td class="c-llava">强制缩放到固定 336×336<div class="pill l">固定</div></td>
+        <td class="c-qwen">保留原生分辨率,任意尺寸<div class="pill v">动态</div></td>
+      </tr>
+      <tr>
+        <td class="axis">视觉 token 数</td>
+        <td class="c-llava">恒定 576 个</td>
+        <td class="c-qwen">随图浮动,从几十到数千</td>
+      </tr>
+      <tr>
+        <td class="axis">ViT 位置编码</td>
+        <td class="c-llava">CLIP 自带的绝对位置编码</td>
+        <td class="c-qwen">改造为 2D-RoPE(支持任意尺寸)</td>
+      </tr>
+      <tr>
+        <td class="axis">LLM 位置编码</td>
+        <td class="c-llava">标准 1D-RoPE</td>
+        <td class="c-qwen">M-RoPE(时间/高/宽 三分量)</td>
+      </tr>
+      <tr>
+        <td class="axis">连接器</td>
+        <td class="c-llava">2 层 MLP</td>
+        <td class="c-qwen">2×2 合并的 MLP(同时压缩 token)</td>
+      </tr>
+      <tr>
+        <td class="axis">视觉编码器</td>
+        <td class="c-llava">现成的 CLIP ViT-L/14,训练中冻结</td>
+        <td class="c-qwen">自研 ~675M ViT,与 LLM 联合训练</td>
+      </tr>
+      <tr>
+        <td class="axis">视频支持</td>
+        <td class="c-llava">原生不支持(需外挂方案)</td>
+        <td class="c-qwen">原生支持,视频=带时间维的图像</td>
+      </tr>
+      <tr>
+        <td class="axis">擅长场景</td>
+        <td class="c-llava">通用图文问答、研究基线</td>
+        <td class="c-qwen">高清文档/表格/长截图、多图、视频、Agent</td>
+      </tr>
+      <tr>
+        <td class="axis">设计哲学</td>
+        <td class="c-llava">把世界裁剪成模型的样子 · 极简</td>
+        <td class="c-qwen">让模型适应世界的样子 · 保真</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<section class="wrap">
+  <div class="callout reveal">
+    <span class="tag">一句话记住</span>
+    <strong>LLaVA 问的是「我该怎么把图缩进我的格子」,Qwen2-VL 问的是「我该怎么长出能装下这张图的格子」。</strong> 前者把复杂度留在外部(缩放、切块),后者把复杂度吸收进架构(动态分辨率、M-RoPE)。
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ PART 5: BROADEN THE BOUNDARY ============ -->
+<section class="wrap">
+  <div class="part-no reveal">Part 5 — 拓宽边界</div>
+  <h2 class="part reveal">把镜头拉远:它们在版图的哪里</h2>
+  <p class="lead reveal">LLaVA 与 Qwen2-VL 不是孤立的两个点,而是两条更大演化脉络上的坐标。理解这些脉络,你就能把任何一个新出的 VLM 快速归位。这里有两条主轴特别值得记住:<em class="v">连接器怎么设计</em>,以及<em class="v">分辨率怎么处理</em>。</p>
+
+  <h3 class="reveal">主轴一:连接器的四种流派</h3>
+  <p class="reveal">「怎么把视觉特征接进 LLM」这件事,业界尝试过四类思路,各有取舍:</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 8 · 连接器家族:从重到轻的四种思路</div>
+    <svg viewBox="0 0 1000 250" role="img" aria-label="连接器的四种设计">
+      <g font-family="'Space Grotesk',sans-serif">
+        <!-- 1 linear/MLP -->
+        <g transform="translate(20,30)">
+          <rect x="0" y="0" width="225" height="190" rx="12" fill="var(--paper)" stroke="var(--vision)" stroke-width="1.4"/>
+          <text x="16" y="30" fill="var(--ink)" font-size="14" font-weight="600">① 线性 / MLP 投影</text>
+          <text x="16" y="50" fill="var(--muted)" font-size="11" font-family="'IBM Plex Mono',monospace">LLaVA · Qwen-VL</text>
+          <rect x="40" y="74" width="60" height="40" rx="6" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.2"/>
+          <text x="70" y="98" fill="var(--vision-deep)" font-size="10" text-anchor="middle">MLP</text>
+          <line x1="100" y1="94" x2="150" y2="94" stroke="var(--vision)" stroke-width="1.4" marker-end="url(#a8)"/>
+          <text x="16" y="150" fill="var(--slate)" font-size="11.5">最简单:直接逐 token 投影。</text>
+          <text x="16" y="168" fill="var(--slate)" font-size="11.5">token 数不变,保留全部信息。</text>
+        </g>
+        <!-- 2 Q-Former -->
+        <g transform="translate(264,30)">
+          <rect x="0" y="0" width="225" height="190" rx="12" fill="var(--paper)" stroke="var(--line)" stroke-width="1.2"/>
+          <text x="16" y="30" fill="var(--ink)" font-size="14" font-weight="600">② Q-Former</text>
+          <text x="16" y="50" fill="var(--muted)" font-size="11" font-family="'IBM Plex Mono',monospace">BLIP-2 · InstructBLIP</text>
+          <rect x="40" y="74" width="60" height="40" rx="6" fill="#fff" stroke="var(--slate)" stroke-width="1.2"/>
+          <text x="70" y="92" fill="var(--ink)" font-size="9.5" text-anchor="middle">Query</text>
+          <text x="70" y="105" fill="var(--ink)" font-size="9.5" text-anchor="middle">Transformer</text>
+          <text x="16" y="150" fill="var(--slate)" font-size="11.5">用少量可学习 query 抽取信息,</text>
+          <text x="16" y="168" fill="var(--slate)" font-size="11.5">大幅压缩 token,但会丢细节。</text>
+        </g>
+        <!-- 3 cross-attn -->
+        <g transform="translate(508,30)">
+          <rect x="0" y="0" width="225" height="190" rx="12" fill="var(--paper)" stroke="var(--line)" stroke-width="1.2"/>
+          <text x="16" y="30" fill="var(--ink)" font-size="14" font-weight="600">③ 交叉注意力</text>
+          <text x="16" y="50" fill="var(--muted)" font-size="11" font-family="'IBM Plex Mono',monospace">Flamingo</text>
+          <rect x="40" y="74" width="60" height="40" rx="6" fill="#fff" stroke="var(--slate)" stroke-width="1.2"/>
+          <text x="70" y="98" fill="var(--ink)" font-size="9" text-anchor="middle">x-attn</text>
+          <text x="16" y="150" fill="var(--slate)" font-size="11.5">在 LLM 内部插入交叉注意力层,</text>
+          <text x="16" y="168" fill="var(--slate)" font-size="11.5">让文本「回看」图像,改动较大。</text>
+        </g>
+        <!-- 4 token merge -->
+        <g transform="translate(752,30)">
+          <rect x="0" y="0" width="228" height="190" rx="12" fill="var(--paper)" stroke="var(--vision)" stroke-width="1.4"/>
+          <text x="16" y="30" fill="var(--ink)" font-size="14" font-weight="600">④ Token 合并 / 池化</text>
+          <text x="16" y="50" fill="var(--muted)" font-size="11" font-family="'IBM Plex Mono',monospace">Qwen2-VL · 2×2</text>
+          <g transform="translate(40,74)">
+            <rect x="0" y="0" width="16" height="16" rx="2" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <rect x="18" y="0" width="16" height="16" rx="2" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <rect x="0" y="18" width="16" height="16" rx="2" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <rect x="18" y="18" width="16" height="16" rx="2" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1"/>
+            <line x1="42" y1="17" x2="64" y2="17" stroke="var(--vision)" stroke-width="1.3" marker-end="url(#a8)"/>
+            <rect x="68" y="6" width="22" height="22" rx="3" fill="var(--vision)" />
+          </g>
+          <text x="16" y="150" fill="var(--slate)" font-size="11.5">MLP 折叠相邻 patch,在「保信息」</text>
+          <text x="16" y="168" fill="var(--slate)" font-size="11.5">与「省 token」之间折中。</text>
+        </g>
+      </g>
+      <defs><marker id="a8" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--vision)"/></marker></defs>
+    </svg>
+  </div>
+  <figcaption>从①到④,大致是「保留信息 ↔ 压缩 token」这根轴上的不同站位。LLaVA 站在①(信息全留、token 固定),Qwen2-VL 站在④(动态保真 + 适度压缩)。JD 里点名要懂的 <b>Q-Former</b>(②)和 <b>C-Abstractor</b> 都属于「压缩派」,理解了这根轴,它们就不再是孤立的名词。</figcaption>
+</figure>
+
+<section class="wrap">
+  <h3 class="reveal">主轴二:分辨率处理的三级跳</h3>
+  <p class="reveal">如果把「模型怎么对待图像尺寸」按时间排开,会看到一条清晰的进化路线——而 LLaVA 与 Qwen2-VL 正好是这条线上前后相邻的两代:</p>
+</section>
+
+<figure class="break reveal">
+  <div class="figbox">
+    <div class="fig-title">图 9 · 分辨率处理的演化:固定 → 切块 → 原生动态</div>
+    <svg viewBox="0 0 1000 200" role="img" aria-label="分辨率处理的三个阶段演化">
+      <!-- timeline -->
+      <line x1="60" y1="100" x2="940" y2="100" stroke="var(--line)" stroke-width="2"/>
+      <!-- stage 1 -->
+      <g transform="translate(60,40)">
+        <circle cx="60" cy="60" r="7" fill="var(--lang)"/>
+        <rect x="0" y="-30" width="200" height="56" rx="9" fill="var(--lang-soft)" stroke="var(--lang)" stroke-width="1.2"/>
+        <text x="100" y="-8" fill="var(--lang-deep)" font-size="13" font-weight="600" text-anchor="middle" font-family="'Space Grotesk',sans-serif">① 固定分辨率</text>
+        <text x="100" y="12" fill="var(--lang-deep)" font-size="10.5" text-anchor="middle">缩到 336²,576 token</text>
+        <text x="60" y="92" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="'IBM Plex Mono',monospace">LLaVA-1.5</text>
+      </g>
+      <!-- stage 2 -->
+      <g transform="translate(390,40)">
+        <circle cx="60" cy="60" r="7" fill="var(--slate)"/>
+        <rect x="-10" y="-30" width="220" height="56" rx="9" fill="var(--paper-2)" stroke="var(--slate)" stroke-width="1.2"/>
+        <text x="100" y="-8" fill="var(--ink)" font-size="13" font-weight="600" text-anchor="middle" font-family="'Space Grotesk',sans-serif">② 切块 / AnyRes</text>
+        <text x="100" y="12" fill="var(--slate)" font-size="10.5" text-anchor="middle">大图切几块分别编码</text>
+        <text x="60" y="92" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="'IBM Plex Mono',monospace">LLaVA-NeXT · InternVL</text>
+      </g>
+      <!-- stage 3 -->
+      <g transform="translate(720,40)">
+        <circle cx="60" cy="60" r="7" fill="var(--vision)"/>
+        <rect x="-10" y="-30" width="220" height="56" rx="9" fill="var(--vision-soft)" stroke="var(--vision)" stroke-width="1.4"/>
+        <text x="100" y="-8" fill="var(--vision-deep)" font-size="13" font-weight="600" text-anchor="middle" font-family="'Space Grotesk',sans-serif">③ 原生动态分辨率</text>
+        <text x="100" y="12" fill="var(--vision-deep)" font-size="10.5" text-anchor="middle">任意尺寸,动态 token</text>
+        <text x="60" y="92" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="'IBM Plex Mono',monospace">Qwen2-VL · NaViT 启发</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>②其实是给①打的补丁——既然不能改尺寸,那就把大图切成几张小图。而 Qwen2-VL 的③直接从根上解决:让 ViT 原生吃任意分辨率(这思路受 Google 的 <b>NaViT</b> 启发)。看懂这条线,你就明白为什么说 Qwen2-VL 代表了「下一代」的方向。</figcaption>
+</figure>
+
+<section class="wrap">
+  <h3 class="reveal">再往前看一步:Qwen2.5-VL 又改了什么</h3>
+  <p class="reveal">如果你后面要上 7B 版本,值得知道 <strong>Qwen2.5-VL</strong> 在 2-VL 基础上的几个增量:把视频的「固定采样」升级为<em class="v">动态帧率(dynamic FPS)</em>采样、给 ViT 引入<em class="v">window attention</em> 降低高分辨率下的计算量、并加入<em class="v">绝对时间编码</em>让模型对「事件发生在视频第几秒」更敏感。方向很一致——沿着「原生、统一、高效」继续走。这些都建立在你已经理解的 2-VL 三大改造之上,不会推翻它们。</p>
+</section>
+
+<!-- ============ PART 6: WHAT IT MEANS FOR YOU ============ -->
+<div class="band">
+  <div class="wide">
+    <div class="part-no reveal">Part 6 — 落到实处</div>
+    <h2 class="part reveal" style="color:#fff">这些差异,对你做后训练意味着什么</h2>
+  </div>
+  <div class="wrap" style="margin-top:8px">
+    <p class="reveal" style="color:#C9D6D9">架构差异不只是知识点,它会实实在在地影响你训练时的每一个旋钮。如果你选 Qwen2-VL 做基座(这是个好选择),下面几条是你迟早会撞上的:</p>
+
+    <h4 class="reveal" style="color:#fff;margin-top:34px">① token 数 = 显存,而它由你控制</h4>
+    <p class="reveal" style="color:#AEBCC0">因为 token 数随分辨率浮动,你在训练框架里会看到一个 <code>MAX_PIXELS</code>(或 min/max pixels)参数——它本质是给「一张图最多产生多少 token」设上限。调大 = 看得更清但更吃显存,调小 = 省显存但可能糊掉文档细节。这是 LLaVA 时代不存在的旋钮,因为那时 token 数是写死的 576。</p>
+
+    <h4 class="reveal" style="color:#fff">② 数据里的图片尺寸会直接影响序列长度</h4>
+    <p class="reveal" style="color:#AEBCC0">在 LLaVA 上,每条样本的视觉部分都是 576 token,长度可预测;在 Qwen2-VL 上,一条带高清大图的样本可能瞬间吃掉几千 token。做 batch、估算 <code>max_length</code>、排查 OOM 时,这个差异是头号嫌疑人。</p>
+
+    <h4 class="reveal" style="color:#fff">③ 想做文档 / 表格 / 视频任务,Qwen 是更顺的起点</h4>
+    <p class="reveal" style="color:#AEBCC0">如果你的偏好对齐任务涉及密集文字、细密图表或视频理解,Qwen2-VL 的原生高分辨率和视频支持会让你少打很多补丁。反过来,如果只是通用图文问答的研究基线,LLaVA-1.5 的简单和海量现成复现资料反而省心。</p>
+
+    <div class="callout reveal" style="border-left-color:var(--vision);background:rgba(16,162,181,.1);margin-top:34px">
+      <span class="tag" style="color:var(--vision)">把它接回你的项目</span>
+      <span style="color:#C9D6D9">在你的「VLM 后训练全流程」项目里,选 Qwen2-VL-2B 做基座、用 DPO/GRPO 做对齐时,这篇文章里的每个机制都会现身:配数据时你要懂 token 预算(动态分辨率),调显存时你要懂 <code>MAX_PIXELS</code>(2×2 合并),理解为什么它能统一处理多图时你要懂 M-RoPE。<strong style="color:#fff">架构不是背景,它是你每天要拧的旋钮。</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CLOSING ============ -->
+<section class="wrap">
+  <h2 class="part reveal">收束:两种哲学,一个方向</h2>
+  <p class="reveal">LLaVA 用极致的简单证明了「投影 + 指令微调」这条路走得通,它是整个领域的地基,也是最好的入门教材。Qwen2-VL 则把复杂度从外部(缩放、切块)吸收进架构内部(动态分辨率、M-RoPE),换来了对真实世界更高的保真度和对图、文、视频的统一处理。</p>
+  <p class="reveal">它们看起来对立,其实指向同一个方向——<strong>让模型越来越贴近世界本来的样子,而不是反过来</strong>。当你理解了「图像如何变成 token」这一个根问题,以及围绕它的两条主轴(连接器、分辨率),你就握住了读懂几乎任何一个新 VLM 的钥匙。</p>
+
+  <div class="callout reveal" style="margin-top:40px">
+    <span class="tag">三句话速查</span>
+    <strong>① 一切始于 patchify:图像被切成 patch、变成 token。</strong><br>
+    <strong>② LLaVA = 固定分辨率 + 固定 576 token + 极简 MLP。</strong><br>
+    <strong>③ Qwen2-VL = 动态分辨率 + 2×2 合并 + M-RoPE,原生支持图/文/视频。</strong>
+  </div>
+</section>
+
+<!-- ============ REFERENCES ============ -->
+<div class="refs">
+  <h3 class="disp">延伸阅读</h3>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>Qwen2-VL</b> · Enhancing Vision-Language Model's Perception of the World at Any Resolution — 2409.12191 · <a href="https://arxiv.org/abs/2409.12191">arxiv.org/abs/2409.12191</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>Qwen2.5-VL</b> Technical Report — 2502.13923 · <a href="https://arxiv.org/abs/2502.13923">arxiv.org/abs/2502.13923</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>LLaVA</b> · Visual Instruction Tuning(NeurIPS'23)— 2304.08485 · <a href="https://arxiv.org/abs/2304.08485">arxiv.org/abs/2304.08485</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>LLaVA-1.5</b> · Improved Baselines with Visual Instruction Tuning — 2310.03744 · <a href="https://arxiv.org/abs/2310.03744">arxiv.org/abs/2310.03744</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>CLIP</b> · Learning Transferable Visual Models From Natural Language Supervision — 2103.00020 · <a href="https://arxiv.org/abs/2103.00020">arxiv.org/abs/2103.00020</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>ViT</b> · An Image is Worth 16x16 Words — 2010.11929 · <a href="https://arxiv.org/abs/2010.11929">arxiv.org/abs/2010.11929</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>BLIP-2</b>(Q-Former)— 2301.12597 · <a href="https://arxiv.org/abs/2301.12597">arxiv.org/abs/2301.12597</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>Flamingo</b>(交叉注意力)— 2204.14198 · <a href="https://arxiv.org/abs/2204.14198">arxiv.org/abs/2204.14198</a></span></div>
+  <div class="ref"><span class="id">arXiv</span><span class="body"><b>NaViT</b> · Patch n' Pack: Native Resolution ViT(原生分辨率的思想来源)— 2307.06304 · <a href="https://arxiv.org/abs/2307.06304">arxiv.org/abs/2307.06304</a></span></div>
+</div>
+
+<footer>
+  <div class="legend">
+    <span><i class="swatch sw-v"></i> 视觉模态</span>
+    <span><i class="swatch sw-l"></i> 语言模态</span>
+  </div>
+  <div style="margin-top:18px">VLM 架构详解 · 全部图解为手绘 SVG · 技术细节核对自各模型官方论文</div>
+</footer>
+
+<script>
+  // progress bar
+  var prog=document.getElementById('prog');
+  function onScroll(){
+    var h=document.documentElement;
+    var sc=(h.scrollTop)/(h.scrollHeight-h.clientHeight);
+    prog.style.width=(sc*100)+'%';
+  }
+  document.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+  // reveal on scroll
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce && 'IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+    },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in');});
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  BLOG / PAPER WRITE-UP TEMPLATE
+  ----------------------------------------------------------------------------
+  A self-contained, single-file HTML template for long-form blog posts and
+  translated paper write-ups. Drop the finished file in /files/blogs/ and add
+  a matching card in /_blogs/ that links to it (see the bottom of this file).
+
+  HOW TO USE
+    1. Replace every {{PLACEHOLDER}} and the demo content between sections.
+    2. Delete any component blocks you don't need — they are all optional and
+       independent. Each is labelled with an HTML comment.
+    3. Keep MathJax only if the post contains LaTeX math; otherwise delete the
+       two <script> tags in <head>.
+    4. Add LaTeX \newcommand macros to the MathJax `macros` object as needed.
+
+  DESIGN NOTES
+    - Pure CSS, no build step. All styling lives in the <style> block below.
+    - Light theme, serif body, sans-serif chrome (labels/captions/tables).
+    - Max content width 860px; responsive down to phones.
+    - Figures should be inlined as <img> (base64 data URIs or hosted URLs).
+  ============================================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} · {{SUBTITLE_OR_中文翻译}}</title>
+
+<!-- ── MathJax (delete this whole block if the post has no math) ───────────── -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    tags: 'none',
+    processEnvironments: true,
+    processRefs: false,
+    macros: {
+      // Add reusable LaTeX macros here, e.g.:
+      sg: '\\operatorname{sg}', Tr: '\\operatorname{Tr}', KL: '\\operatorname{KL}',
+      diag: '\\operatorname{diag}'
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+
+<style>
+:root{
+  --bg:#ffffff; --ink:#1a1c21; --muted:#5b6270; --line:#e3e6ec;
+  --accent:#2c5fa8; --accent-soft:#eef3fb; --box:#f7f8fa; --box-line:#dfe3ea;
+  --maxw:860px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Source Han Serif SC","Noto Serif CJK SC","Songti SC",
+    -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",serif;
+  font-size:17px; line-height:1.85; letter-spacing:.1px;
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:48px 22px 120px;}
+
+/* Cover / title block */
+.cover{border-bottom:2px solid var(--ink); padding-bottom:24px; margin-bottom:8px;}
+.badge{display:inline-block; font-family:ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  font-size:12.5px; letter-spacing:.08em; color:var(--accent); background:var(--accent-soft);
+  border:1px solid #d6e2f3; padding:4px 11px; border-radius:999px; margin-bottom:18px;}
+h1.title{font-size:30px; line-height:1.35; margin:.1em 0 .35em; font-weight:800; letter-spacing:.2px;}
+h1.title .en{display:block; font-size:17px; font-weight:600; color:var(--muted);
+  font-family:ui-sans-serif,system-ui,sans-serif; margin-top:8px; letter-spacing:0;}
+.authors{color:var(--ink); font-size:15px; line-height:1.7; margin:.6em 0 .2em;
+  font-family:ui-sans-serif,system-ui,sans-serif;}
+.aff{display:block; color:var(--muted); font-size:13.5px; margin-top:.35em;
+  font-family:ui-sans-serif,system-ui,sans-serif;}
+.date{color:var(--muted); font-size:13.5px; margin:.8em 0 0; font-family:ui-sans-serif,system-ui,sans-serif;}
+.date .small{font-size:12.5px;}
+.meta a{color:var(--accent); text-decoration:none;} .meta a:hover{text-decoration:underline;}
+
+/* Translator's note */
+.transnote{background:var(--box); border:1px solid var(--box-line); border-left:4px solid var(--accent);
+  border-radius:8px; padding:14px 18px; margin:26px 0 8px; font-size:14px; color:var(--muted);
+  font-family:ui-sans-serif,system-ui,sans-serif; line-height:1.7;}
+
+/* Abstract */
+.abstract{background:var(--accent-soft); border:1px solid #d6e2f3; border-radius:10px; padding:16px 22px; margin:1.7em 0 1.2em;}
+.abstract .label{font-weight:800; text-align:center; color:var(--accent); letter-spacing:.18em; margin-bottom:.5em; font-family:ui-sans-serif,system-ui,sans-serif; font-size:14px;}
+
+/* Table of contents */
+.toc{background:var(--box); border:1px solid var(--box-line); border-radius:10px; padding:18px 24px; margin:30px 0;
+  font-family:ui-sans-serif,system-ui,sans-serif; font-size:14.5px;}
+.toc h2{border:none; font-size:17px; margin:0 0 .5em; padding:0;}
+.toc a{color:#2a3550; text-decoration:none;} .toc a:hover{color:var(--accent);}
+.toc ol{list-style:none; padding-left:0; margin:.2em 0;}
+.toc ol ol{padding-left:1.3em; font-size:13.5px; color:var(--muted);}
+.toc li{margin:.18em 0;}
+
+/* Headings & text */
+h2{font-size:23px; font-weight:800; margin:2.1em 0 .55em; padding-top:.3em; letter-spacing:.3px;
+  border-bottom:1px solid var(--line); padding-bottom:.28em;}
+h3{font-size:19px; font-weight:700; margin:1.7em 0 .5em; color:#23304a;}
+h4{font-size:16.5px; font-weight:700; margin:1.35em 0 .4em; color:#33405c;}
+h2 .sec,h3 .sec,h4 .sec{color:var(--accent); font-family:ui-sans-serif,system-ui,sans-serif; margin-right:.5em; font-weight:800;}
+p{margin:.7em 0;}
+.lead{font-weight:700; color:#1f2a44;}     /* run-in lead-in for a paragraph */
+.runin{font-weight:700; color:#1f2a44;}
+ul,ol{padding-left:1.4em; margin:.7em 0;}
+li{margin:.34em 0;}
+em,i{font-style:normal; background:linear-gradient(transparent 62%, #fde98a55 62%);} /* highlight, not italic */
+strong{font-weight:700;}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.92em; background:#f2f3f6; padding:1px 5px; border-radius:4px;}
+hr.div{border:none; border-top:1px solid var(--line); margin:2.2em 0;}
+
+/* Figures */
+figure{margin:1.6em 0; text-align:center;}
+figure img{max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px;
+  box-shadow:0 1px 4px rgba(20,30,55,.06); background:#fff;}
+figure.tbl img{border:none; box-shadow:none;}
+figcaption{font-size:13.5px; color:var(--muted); margin-top:11px; line-height:1.65;
+  font-family:ui-sans-serif,system-ui,sans-serif; text-align:left; padding:0 4px;}
+figcaption .lab{font-weight:700; color:#2a3550;}
+
+/* Callouts: .imp = important/highlight, .sum = summary */
+.callout{background:var(--box); border:1px solid var(--box-line); border-radius:10px; padding:15px 20px; margin:1.3em 0;}
+.callout.imp{border-left:4px solid #b9882a; background:#fdf8ee;}
+.callout.sum{border-left:4px solid var(--accent); background:var(--accent-soft);}
+.callout .ctag{font-weight:800; font-family:ui-sans-serif,system-ui,sans-serif; font-size:13.5px;
+  letter-spacing:.04em; display:block; margin-bottom:.35em;}
+.callout.imp .ctag{color:#9a6f1e;} .callout.sum .ctag{color:var(--accent);}
+
+/* Theorem-like boxes: .prop .cor .def .assm .lem */
+.thm{border:1px solid var(--box-line); border-left:4px solid #4a6b8a; border-radius:8px;
+  padding:13px 18px; margin:1.2em 0; background:#fafbfd;}
+.thm .tname{font-weight:800; color:#33485f; font-family:ui-sans-serif,system-ui,sans-serif; margin-right:.5em;}
+.thm.prop{border-left-color:#7a5a9a;} .thm.prop .tname{color:#5d4178;}
+.thm.cor{border-left-color:#3f8f7a;} .thm.cor .tname{color:#2f6c5b;}
+.thm.def{border-left-color:#8a6a3a;} .thm.def .tname{color:#6b5023;}
+.thm.assm{border-left-color:#6a7a8a;} .thm.assm .tname{color:#4a5b6b;}
+.thm.lem{border-left-color:#9a5a6a;} .thm.lem .tname{color:#78404e;}
+.proof{margin:.6em 0 1.2em; padding-left:14px; border-left:2px solid var(--box-line); color:#36404f;}
+.proof .ptag{font-style:italic; font-weight:600; color:#55606f;}
+
+/* Numbered observations (circled number) */
+.obs{margin:.7em 0;}
+.obs .otag{display:inline-block; min-width:1.6em; height:1.6em; line-height:1.6em; text-align:center;
+  background:var(--accent); color:#fff; border-radius:50%; font-size:13px; font-weight:700; margin-right:.5em;
+  font-family:ui-sans-serif,system-ui,sans-serif;}
+
+/* Equations */
+mjx-container{overflow-x:auto; overflow-y:hidden; max-width:100%;}
+mjx-container[display="true"]{margin:1.05em 0 !important;}
+.eqwrap{margin:1.05em 0; overflow-x:auto;}
+
+/* Algorithm / pseudo-code block */
+.algo{border:1px solid var(--box-line); border-radius:8px; background:#fbfcfe; padding:6px 0; margin:1.3em 0;
+  font-family:"Latin Modern Roman",Georgia,serif;}
+.algo .algohd{font-weight:800; background:#eef1f6; padding:8px 16px; border-bottom:1px solid var(--box-line);
+  font-family:ui-sans-serif,system-ui,sans-serif; font-size:14.5px;}
+.algo .algobody{padding:10px 18px; font-size:15px; line-height:1.7;}
+.algo .ln{display:block;} .algo .kw{font-weight:700;}
+
+/* Code / prompt block */
+.prompt{border:1px solid var(--box-line); border-radius:8px; background:#fbfcfe; margin:1.1em 0; overflow:hidden;}
+.prompt .phd{font-weight:700; background:#eef1f6; padding:7px 15px; border-bottom:1px solid var(--box-line); font-size:14px; color:#384;}
+.prompt pre{margin:0; padding:11px 16px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; color:#1f2430;}
+
+/* Data tables */
+.tablewrap{overflow-x:auto; margin:1.3em 0;}
+table.data{border-collapse:collapse; width:100%; font-size:14px; font-family:ui-sans-serif,system-ui,sans-serif;}
+table.data th,table.data td{border:1px solid var(--line); padding:7px 10px; text-align:center;}
+table.data th{background:var(--box);}
+
+/* References */
+.refs{font-family:ui-sans-serif,system-ui,sans-serif; font-size:13px; color:#3a4150; line-height:1.55;}
+.refs p{margin:.34em 0; padding-left:2.4em; text-indent:-2.4em;}
+.refs .rn{font-weight:700; color:#2a3550;}
+.appxhead{text-align:center; border:none; letter-spacing:.3em; color:var(--muted); font-size:20px; margin-top:2.4em;}
+
+@media (max-width:620px){ body{font-size:16px;} h1.title{font-size:24px;} .wrap{padding:30px 15px 80px;} }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- ── COVER ────────────────────────────────────────────────────────────── -->
+  <div class="cover">
+    <span class="badge">{{TOPIC_TAG e.g. 中文翻译 · LLM}}</span>
+    <h1 class="title">{{TITLE_中文}}<span class="en">{{ORIGINAL_ENGLISH_TITLE}}</span></h1>
+    <div class="authors">
+      {{Author One}}<sup>1</sup>&nbsp;&nbsp; {{Author Two}}<sup>2</sup>
+      <span class="aff"><sup>1</sup>{{Affiliation 1}}&nbsp;&nbsp; <sup>2</sup>{{Affiliation 2}}</span>
+    </div>
+    <div class="date">{{DATE}}<br><span class="small">{{arXiv id / venue / notes}}</span></div>
+  </div>
+
+  <!-- ── TRANSLATOR'S / AUTHOR'S NOTE (optional) ──────────────────────────── -->
+  <div class="transnote">
+    {{A short note on what this is — e.g. "本文为 XXX 的中文翻译与精读，公式与图表均按原文复现。"}}
+  </div>
+
+  <!-- ── ABSTRACT (optional) ──────────────────────────────────────────────── -->
+  <div class="abstract">
+    <div class="label">摘 要</div>
+    <p>{{Abstract paragraph...}}</p>
+  </div>
+
+  <!-- ── TABLE OF CONTENTS (optional) ─────────────────────────────────────── -->
+  <nav class="toc">
+    <h2>目录</h2>
+    <ol>
+      <li><a href="#sec-1">1 引言</a></li>
+      <li><a href="#sec-2">2 相关工作</a></li>
+    </ol>
+  </nav>
+
+  <!-- ── SECTION ──────────────────────────────────────────────────────────── -->
+  <h2 id="sec-1"><span class="sec">1</span>{{Section title}}</h2>
+  <p><span class="lead">{{Lead-in.}}</span> {{Body text. Inline math like \(x^2\). Use <em>…</em> to highlight (renders as a yellow underline, not italics), <strong>…</strong> for bold.}}</p>
+
+  <!-- Display equation -->
+  <div class="eqwrap">\[ {{ \mathcal{L}(\theta) = \mathbb{E}_{x\sim D}\,[\ell(f_\theta(x), y)] }} \]</div>
+
+  <!-- Important callout -->
+  <div class="callout imp"><span class="ctag">关键</span>{{One-sentence takeaway worth boxing.}}</div>
+
+  <!-- Figure (inline the image as a data URI or hosted URL) -->
+  <figure>
+    <img src="{{data:image/png;base64,... OR https://...}}" alt="{{alt}}">
+    <figcaption><span class="lab">图 1.</span> {{Caption.}}</figcaption>
+  </figure>
+
+  <!-- Theorem-like box (swap class: thm prop / cor / def / assm / lem) -->
+  <div class="thm prop">
+    <span class="tname">命题 1.</span>{{Statement, possibly with math \(\dots\).}}
+  </div>
+  <div class="proof"><span class="ptag">证明.</span> {{Proof sketch.}} ∎</div>
+
+  <!-- Numbered observation -->
+  <p class="obs"><span class="otag">1</span>{{An observation.}}</p>
+
+  <!-- ── SECTION ──────────────────────────────────────────────────────────── -->
+  <h2 id="sec-2"><span class="sec">2</span>{{Section title}}</h2>
+
+  <!-- Summary callout -->
+  <div class="callout sum"><span class="ctag">小结</span>{{Section summary.}}</div>
+
+  <!-- Data table -->
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th>{{col}}</th><th>{{col}}</th></tr></thead>
+      <tbody><tr><td>{{}}</td><td>{{}}</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Code / prompt block -->
+  <div class="prompt">
+    <div class="phd">{{Prompt / code label}}</div>
+    <pre>{{verbatim text}}</pre>
+  </div>
+
+  <hr class="div">
+
+  <!-- ── REFERENCES ───────────────────────────────────────────────────────── -->
+  <h2 class="appxhead">参考文献</h2>
+  <div class="refs">
+    <p><span class="rn">[1]</span> {{Author, A. (Year). Title. Venue.}}</p>
+    <p><span class="rn">[2]</span> {{…}}</p>
+  </div>
+
+</div>
+</body>
+</html>
+
+<!--
+  ============================================================================
+  STEP 2 — register the post on the site
+  ----------------------------------------------------------------------------
+  Save the finished file as:   files/blogs/<slug>.html
+  Then create a card:          _blogs/<YYYY-MM-DD>-<slug>.md   with front matter:
+
+      ---
+      title: "{{English title}} (中文翻译)"
+      collection: blogs
+      permalink: /blogs/<slug>
+      link: /files/blogs/<slug>.html
+      header:
+        teaser: art/art-N.jpg      # an Aivazovsky painting from images/art/
+      excerpt: "One-sentence summary shown on the card."
+      date: YYYY-MM-DD
+      ---
+
+  The card's title links to the standalone HTML; the teaser image replaces the
+  old letter-monogram thumbnail. Pick any landscape art-N.jpg from images/art/.
+  ============================================================================
+-->

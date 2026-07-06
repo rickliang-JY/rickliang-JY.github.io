@@ -12,7 +12,7 @@
   {% assign title = post.title %}
 {% endif %}
 
-<div class="{{ include.type | default: "list" }}__item">
+<div class="{{ include.type | default: "list" }}__item" data-date="{{ post.date | date: '%Y-%m-%d' }}" data-title="{{ title | strip_html | strip | escape }}">
   {% assign is_list = false %}
   {% if include.type != "grid" %}{% assign is_list = true %}{% endif %}
   {% assign has_media = false %}

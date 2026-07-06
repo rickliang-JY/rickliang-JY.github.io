@@ -1,0 +1,164 @@
+{% comment %}
+  list-search.html — client-side search / filter / sort for an archive listing.
+  Drop {% include list-search.html %} into a `layout: archive` page (after
+  {% include base_path %}, before the item loop). It auto-discovers the rendered
+  `.list__item` cards inside `.archive`, so it works for blogs, notes,
+  publications (with category h2 group headers) and projects with no extra
+  wiring. Sorting uses the data-date / data-title added in archive-single.html.
+{% endcomment %}
+<style>
+.list-search{margin:.2em 0 1.9em;}
+.list-search__bar{display:flex; align-items:center; gap:.55em;
+  border:1px solid var(--global-border-color,#e3e6ec); border-radius:10px;
+  padding:.5em .85em; background:var(--global-bg-color,#fff);
+  transition:border-color .15s ease, box-shadow .15s ease;}
+.list-search__bar:focus-within{border-color:var(--global-link-color,#2f7f93);
+  box-shadow:0 0 0 3px rgba(120,140,160,.18);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--global-link-color,#2f7f93) 18%, transparent);}
+.list-search__icon{display:flex; flex:none; color:var(--global-text-color-light,#7a828c);}
+.list-search__icon svg{width:17px; height:17px; display:block;}
+.list-search__input{flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent;
+  font-family:inherit; font-size:1em; color:var(--global-text-color,#222); padding:.15em 0;}
+.list-search__input::-webkit-search-cancel-button{-webkit-appearance:none; display:none;}
+.list-search__clear{flex:none; border:none; background:transparent; cursor:pointer; padding:0 .1em;
+  font-size:1.3em; line-height:1; color:var(--global-text-color-light,#7a828c);}
+.list-search__clear:hover{color:var(--global-text-color,#222);}
+.list-search__controls{display:flex; align-items:center; justify-content:space-between; gap:1em;
+  margin-top:.55em; font-size:.82em; color:var(--global-text-color-light,#7a828c);}
+.list-search__sort{display:inline-flex; align-items:center; gap:.45em; margin:0;}
+.list-search__select{font-family:inherit; font-size:1em; color:var(--global-text-color,#222);
+  background:var(--global-bg-color,#fff); border:1px solid var(--global-border-color,#e3e6ec);
+  border-radius:7px; padding:.22em .5em; cursor:pointer;}
+.list-search__count{white-space:nowrap;}
+.list-search__empty{color:var(--global-text-color-light,#7a828c); font-style:italic; margin:1.4em 0;}
+.list-search__hl{background:rgba(255,213,0,.32); border-radius:2px;}
+@media (max-width:520px){
+  .list-search__controls{flex-direction:column; align-items:flex-start; gap:.4em;}
+}
+</style>
+
+<div class="list-search">
+  <div class="list-search__bar">
+    <span class="list-search__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </span>
+    <input type="search" id="listSearchInput" class="list-search__input" autocomplete="off"
+           placeholder="Search {{ page.title }}…" aria-label="Search {{ page.title }}">
+    <button type="button" id="listSearchClear" class="list-search__clear" aria-label="Clear search" hidden>&times;</button>
+  </div>
+  <div class="list-search__controls">
+    <label class="list-search__sort">Sort
+      <select id="listSearchSort" class="list-search__select">
+        <option value="default" selected>Default</option>
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="title-asc">Title A–Z</option>
+        <option value="title-desc">Title Z–A</option>
+      </select>
+    </label>
+    <span class="list-search__count" id="listSearchCount" aria-live="polite"></span>
+  </div>
+</div>
+<p class="list-search__empty" id="listSearchEmpty" hidden>No matches — try another term.</p>
+
+<script>
+(function(){
+  function init(){
+    var root  = document.querySelector('#main .archive') || document.querySelector('.archive');
+    var input = document.getElementById('listSearchInput');
+    var clear = document.getElementById('listSearchClear');
+    var sortSel = document.getElementById('listSearchSort');
+    var count = document.getElementById('listSearchCount');
+    var empty = document.getElementById('listSearchEmpty');
+    if(!root || !input) return;
+
+    // Build "sections": an optional header (<h2> + <hr>) followed by its cards.
+    var sections = [], cur = null;
+    Array.prototype.forEach.call(root.children, function(el){
+      if(el.id === 'listSearchEmpty') return;
+      if(el.classList.contains('list-search') || el.classList.contains('page__title')) return;
+      if(el.tagName === 'H2'){ cur = {header:[el], items:[]}; sections.push(cur); return; }
+      if(el.tagName === 'HR'){ if(cur) cur.header.push(el); return; }
+      if(el.classList.contains('list__item')){
+        if(!cur){ cur = {header:[], items:[]}; sections.push(cur); }
+        cur.items.push(el);
+      }
+    });
+    var cards = [];
+    sections.forEach(function(sec){
+      sec.original = sec.items.slice();
+      sec.anchor = sec.header.length ? sec.header[sec.header.length-1]
+                 : (sec.items[0] ? sec.items[0].previousElementSibling : null);
+      sec.items.forEach(function(c){
+        c._search = (c.textContent || '').toLowerCase().replace(/\s+/g,' ');
+        cards.push(c);
+      });
+    });
+    if(!cards.length){ var ls=document.querySelector('.list-search'); if(ls) ls.style.display='none'; return; }
+
+    function titleOf(c){ return (c.getAttribute('data-title') || c.textContent || '').trim().toLowerCase(); }
+    function dateOf(c){ return c.getAttribute('data-date') || ''; }
+
+    function comparator(mode){
+      if(mode === 'title-asc')  return function(a,b){ return titleOf(a).localeCompare(titleOf(b)); };
+      if(mode === 'title-desc') return function(a,b){ return titleOf(b).localeCompare(titleOf(a)); };
+      var asc = mode === 'date-asc';
+      return function(a,b){
+        var da = dateOf(a), db = dateOf(b);
+        if(!da && !db) return 0;
+        if(!da) return 1;            // items without a date sink to the bottom
+        if(!db) return -1;
+        return asc ? (da < db ? -1 : da > db ? 1 : 0) : (da > db ? -1 : da < db ? 1 : 0);
+      };
+    }
+
+    function reorder(){
+      var mode = sortSel.value;
+      sections.forEach(function(sec){
+        var arr = sec.original.slice();
+        if(mode !== 'default') arr.sort(comparator(mode));
+        var anchor = sec.anchor;
+        arr.forEach(function(card){ if(anchor && anchor.parentNode){ anchor.after(card); anchor = card; } });
+      });
+    }
+
+    function apply(){
+      var q = input.value.trim().toLowerCase();
+      var terms = q ? q.split(/\s+/) : [];
+      var shown = 0;
+      sections.forEach(function(sec){
+        var vis = 0;
+        sec.items.forEach(function(card){
+          var ok = terms.every(function(t){ return card._search.indexOf(t) !== -1; });
+          card.style.display = ok ? '' : 'none';
+          if(ok){ vis++; shown++; }
+        });
+        sec.header.forEach(function(h){ h.style.display = vis ? '' : 'none'; });
+      });
+      clear.hidden = q.length === 0;
+      empty.hidden = shown !== 0;
+      count.textContent = shown === cards.length ? cards.length + ' items'
+                        : shown + ' of ' + cards.length;
+    }
+
+    input.addEventListener('input', apply);
+    clear.addEventListener('click', function(){ input.value=''; apply(); input.focus(); });
+    sortSel.addEventListener('change', function(){ reorder(); apply(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key === '/' && document.activeElement !== input &&
+         !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName)){
+        e.preventDefault(); input.focus();
+      } else if(e.key === 'Escape' && document.activeElement === input){
+        input.value=''; apply(); input.blur();
+      }
+    });
+
+    apply();
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
